@@ -1,6 +1,6 @@
 import { Gift, Link2, Wallet } from "lucide-react";
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Header } from "../components/Header";
 import { useAuth } from "../auth/AuthProvider";
 import { useConnectWallet } from "../components/ConnectWallet";
@@ -138,6 +138,9 @@ export default function Landing() {
         <div className="mx-auto flex max-w-[1140px] flex-col items-center justify-between gap-2 px-4 py-8 text-sm text-neutral-500 sm:flex-row sm:px-6">
           <span>© {new Date().getFullYear()} Lumecard</span>
           <div className="flex gap-6">
+            <Link to="/guide" className="font-medium text-neutral-700">
+              Guide
+            </Link>
             <a href="#">Terms</a>
             <a href="#">Privacy</a>
             <a href="#">Support</a>

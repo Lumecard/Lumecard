@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import "./index.css";
 import Landing from "./pages/Landing";
+import Guide from "./pages/Guide";
 import Dashboard from "./pages/Dashboard";
 import CreateGift from "./pages/gift/CreateGift";
 import TokenPage from "./pages/TokenPage";
@@ -24,6 +25,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <ConnectWalletProvider>
             <Routes>
               <Route path="/" element={<Landing />} />
+              <Route path="/guide" element={<Guide />} />
               <Route path="/app" element={<RequireAuth><Dashboard /></RequireAuth>} />
               <Route path="/app/token/:id" element={<RequireAuth><TokenPage /></RequireAuth>} />
               <Route path="/app/gifts/create" element={<RequireAuth><CreateGift /></RequireAuth>} />
