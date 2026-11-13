@@ -144,7 +144,7 @@ function WalletPanel({ onClose }: { onClose: () => void }) {
 }
 
 /** `signedIn` is ignored: the header follows the connected wallet. */
-export function Header(_props: { signedIn?: boolean }) {
+export function Header({ landing }: { signedIn?: boolean; landing?: boolean }) {
   const { openConnect } = useConnectWallet();
   const { authenticated, stellarAddress } = useAuth();
   const [panel, setPanel] = useState(false);
@@ -166,6 +166,14 @@ export function Header(_props: { signedIn?: boolean }) {
             </button>
           )}
         </div>
+        {landing && !signedIn && (
+          <nav className="hidden items-center gap-7 text-sm text-neutral-600 md:flex">
+            <a href="#features">Features</a>
+            <a href="#how">How it works</a>
+            <a href="#faq">FAQ</a>
+            <Link to="/guide">Guide</Link>
+          </nav>
+        )}
         {signedIn ? (
           <button
             onClick={() => setPanel(true)}

@@ -1,5 +1,5 @@
-import { Gift, Link2, Wallet } from "lucide-react";
 import { useEffect } from "react";
+import { ArrowDownToLine, ArrowRight, Check, ChevronDown, Clock, Gift, KeyRound, Link2, Send, ShieldCheck, Wallet, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Header } from "../components/Header";
 import { useAuth } from "../auth/AuthProvider";
@@ -8,35 +8,150 @@ import { AssetIcon } from "../components/AssetIcon";
 import { LogoMark } from "../components/Logo";
 import { getAsset, type Asset } from "../data/assets";
 
-function HeroCard({ asset, label, className, rotate }: { asset: Asset; label: string; className: string; rotate: string }) {
+const PRIMARY_BTN =
+  "inline-flex items-center justify-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-3px_0_rgba(0,0,0,0.18)]";
+const SECONDARY_BTN =
+  "inline-flex items-center justify-center gap-2 rounded-full bg-white/[0.06] px-6 py-3 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_-2px_0_rgba(0,0,0,0.35)]";
+
+function Eyebrow({ children }: { children: string }) {
+  return <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-500">{children}</p>;
+}
+
+function SectionTitle({ eyebrow, title, body }: { eyebrow: string; title: string; body?: string }) {
   return (
-    <div
-      className={`animate-float absolute aspect-[1.6/1] w-[230px] rounded-2xl bg-gradient-to-br p-4 text-white shadow-2xl min-[420px]:w-[290px] min-[420px]:p-5 sm:w-[340px] ${asset.gradient} ${className}`}
-      style={{ ["--r" as string]: rotate, transform: `rotate(${rotate})` }}
-    >
-      <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-widest opacity-80">
-        <span>Gift card</span>
-        <span className="flex items-center gap-1 normal-case tracking-normal">
-          <LogoMark className="h-4 w-4" /> Lumecard
-        </span>
-      </div>
-      {asset.icon ? (
-        <img src={asset.icon} alt="" draggable={false} className="mt-4 h-16 w-16 rounded-full bg-[#0e0d12]/90 p-0.5" />
-      ) : (
-        <div className="mt-4 text-6xl font-black drop-shadow">{asset.glyph}</div>
-      )}
-      <div className="absolute bottom-4 right-5 text-lg font-bold uppercase tracking-widest">{label}</div>
+    <div className="mx-auto max-w-2xl text-center">
+      <Eyebrow>{eyebrow}</Eyebrow>
+      <h2 className="mt-3 text-balance text-3xl font-medium tracking-tight sm:text-4xl">{title}</h2>
+      {body && <p className="mt-4 text-neutral-600">{body}</p>}
     </div>
   );
 }
 
-const SAMPLE_TILES = [
-  { key: "usdc-100", id: "usdc", amount: "$100", bg: "from-sky-950 to-blue-900" },
-  { key: "xlm-500", id: "xlm", amount: "500", bg: "from-neutral-50 to-neutral-200" },
-  { key: "eurc-50", id: "eurc", amount: "€50", bg: "from-cyan-950 to-blue-900" },
-  { key: "usdc-25", id: "usdc", amount: "$25", bg: "from-sky-950 to-blue-900" },
-  { key: "xlm-1000", id: "xlm", amount: "1,000", bg: "from-neutral-50 to-neutral-200" },
-  { key: "eurc-20", id: "eurc", amount: "€20", bg: "from-cyan-950 to-blue-900" },
+/** A small, static picture of the real dashboard. Sample numbers, for show. */
+function DashboardPreview() {
+  const rows = [
+    { id: "usdc", amount: "420.00", usd: "$420.00" },
+    { id: "xlm", amount: "5,120.50", usd: "$862.30" },
+    { id: "eurc", amount: "150.00", usd: "$165.00" },
+  ];
+  return (
+    <div className="w-full rounded-[28px] bg-card p-4 text-left shadow-[0_40px_120px_-30px_rgba(228,86,12,0.35)] sm:p-5">
+      <div className="rounded-2xl bg-gradient-to-br from-ink via-[#2a1a12] to-brand-700 p-5 text-white">
+        <p className="text-xs text-white/60">Total balance</p>
+        <p className="mt-1 text-3xl font-semibold tracking-tight">$1,447.30</p>
+        <div className="mt-5 flex gap-2">
+          {[
+            { icon: Gift, label: "Gift" },
+            { icon: ArrowDownToLine, label: "Deposit" },
+            { icon: Send, label: "Send" },
+          ].map(({ icon: Icon, label }) => (
+            <span key={label} className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium">
+              <Icon className="h-3.5 w-3.5" /> {label}
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="mt-3 divide-y divide-white/5 rounded-2xl bg-surface">
+        {rows.map((r) => {
+          const a = getAsset(r.id)!;
+          return (
+            <div key={r.id} className="flex items-center gap-3 px-4 py-3">
+              <AssetIcon asset={a} size="sm" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold">{a.name}</p>
+                <p className="text-xs text-neutral-500">
+                  {r.amount} {a.symbol}
+                </p>
+              </div>
+              <p className="text-sm font-semibold">{r.usd}</p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function MiniGiftCard({ asset, label, className }: { asset: Asset; label: string; className: string }) {
+  return (
+    <div className={`absolute hidden aspect-[1.6/1] sm:block w-[150px] rounded-xl bg-gradient-to-br p-3 text-white shadow-2xl sm:w-[190px] sm:p-4 ${asset.gradient} ${className}`}>
+      <div className="flex items-center justify-between text-[9px] font-semibold uppercase tracking-widest opacity-80 sm:text-[10px]">
+        <span>Gift card</span>
+        <span className="flex items-center gap-1 normal-case tracking-normal">
+          <LogoMark className="h-3 w-3" /> Lumecard
+        </span>
+      </div>
+      {asset.icon && <img src={asset.icon} alt="" draggable={false} className={`mt-2 h-9 w-9 rounded-full bg-[#0e0d12]/90 p-0.5 sm:mt-3 sm:h-11 sm:w-11`} />}
+      <div className="absolute bottom-2.5 right-3 text-xs font-bold uppercase tracking-widest sm:bottom-3 sm:text-sm">{label}</div>
+    </div>
+  );
+}
+
+const FEATURES = [
+  {
+    icon: Wallet,
+    title: "One balance, in plain view",
+    body: "Connect your own Stellar wallet and see everything you hold in one place. XLM, USDC and EURC, priced in dollars.",
+    points: ["Live balances from the network", "No account to create", "Your keys never leave your wallet"],
+  },
+  {
+    icon: Gift,
+    title: "Gift crypto with a link",
+    body: "Lock an amount, add a message, and share a link. The recipient opens it on Lumecard and claims it into their own wallet.",
+    points: ["Works for people with no wallet yet", "Unclaimed gifts expire and come back", "Track every gift you send"],
+  },
+  {
+    icon: Send,
+    title: "Send and receive, simply",
+    body: "Deposit with your address, send to any Stellar wallet, and let Lumecard check the address and trustline before anything moves.",
+    points: ["Clear errors, not raw codes", "Fees shown before you confirm", "Fast, low-cost Stellar payments"],
+  },
+];
+
+const STEPS = [
+  { n: "01", title: "Connect a wallet", body: "Use Freighter, xBull, Lobstr, Albedo and more. Nothing to sign up for." },
+  { n: "02", title: "Choose what to do", body: "Deposit, send, or create a gift. Pick the token and the amount." },
+  { n: "03", title: "Confirm in your wallet", body: "You approve each action yourself. Lumecard never holds your funds." },
+];
+
+const COMPARE: { other: string; ours: string }[] = [
+  { other: "Gifts need the other person to share an address first", ours: "Share a link. They claim it, even with an empty wallet" },
+  { other: "Funds sent to a wrong address are gone", ours: "Gifts sit in a smart contract and return to you if unclaimed" },
+  { other: "Hidden fees you find out about later", ours: "One clear fee, 1.5% on gifts, shown before you confirm" },
+  { other: "A new account and password for every app", ours: "Your wallet is your sign-in. No Lumecard account" },
+];
+
+const STATS = [
+  { value: "1.5%", label: "Flat fee on gifts" },
+  { value: "3", label: "Stellar tokens: XLM, USDC, EURC" },
+  { value: "0", label: "Accounts or passwords to manage" },
+];
+
+const FAQ = [
+  {
+    q: "What is Lumecard?",
+    a: "Lumecard is a front desk for crypto on the Stellar network. You can hold, deposit, send and gift XLM, USDC and EURC from one clean dashboard, using your own wallet.",
+  },
+  {
+    q: "Do I need to create an account?",
+    a: "No. You connect a Stellar wallet such as Freighter or xBull. Lumecard does not store passwords and cannot move your funds.",
+  },
+  {
+    q: "What happens if a gift is never claimed?",
+    a: "Each gift has an expiry that you choose. After it passes, you can take the amount back from the Activity tab in your wallet panel.",
+  },
+  {
+    q: "What does it cost?",
+    a: "Gifts carry a 1.5% fee, paid by the sender and shown before you confirm. Normal Stellar network fees apply to every transaction and are very small.",
+  },
+  {
+    q: "Is this live with real money?",
+    a: "Not yet. Lumecard currently runs on the Stellar test network, so the tokens have no real value. Use it to try everything safely.",
+  },
+  {
+    q: "Which wallets work?",
+    a: "Browser wallets such as Freighter, xBull, Albedo, Hana and Rabet work today. Mobile wallets are being added.",
+  },
 ];
 
 export default function Landing() {
@@ -44,106 +159,215 @@ export default function Landing() {
   const { authenticated, stellarAddress } = useAuth();
   const { openConnect } = useConnectWallet();
 
-  // Signed in with a wallet (including after a Google/Discord redirect that
-  // reloads the page): go to the dashboard.
+  // A connected wallet goes straight to the dashboard.
   useEffect(() => {
     if (authenticated && stellarAddress) navigate("/app", { replace: true });
   }, [authenticated, stellarAddress, navigate]);
 
+  const start = () => openConnect(() => navigate("/app"));
+
   return (
     <div className="min-h-screen overflow-x-hidden">
-      <Header />
+      <Header landing />
 
       {/* Hero */}
-      <section className="bg-gradient-to-b from-card to-brand-50">
-        <div className="mx-auto grid max-w-[1140px] items-center gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 md:py-24">
-          <div>
-            <h1 className="text-5xl font-medium leading-[1.1] tracking-tight sm:text-6xl">
-              Gift crypto
-              <br />
-              without explaining it.
-            </h1>
-            <p className="mt-8 text-lg text-neutral-700">
-              Send crypto as a gift card. They open a link and it's theirs to keep.
-            </p>
-            <div className="mt-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-              <button
-                onClick={() => openConnect(() => navigate("/app/gifts/create"))}
-                className="inline-flex w-full items-center justify-center rounded-full bg-brand-600 px-6 py-3.5 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-3px_0_rgba(0,0,0,0.18)] sm:w-auto"
-              >
-                Create Your First Gift
-              </button>
-              <span className="inline-flex items-center gap-2 rounded-full bg-[#0e0d12]/70 px-3 py-1.5 text-xs font-medium text-neutral-600 ring-1 ring-neutral-200">
-                <span className="text-sm leading-none">✦</span> Built on Stellar
-              </span>
-            </div>
+      <section className="relative">
+        <div aria-hidden className="dot-grid pointer-events-none absolute inset-x-0 top-0 h-[560px]" />
+        <div aria-hidden className="pointer-events-none absolute left-1/2 top-0 h-[420px] w-[720px] -translate-x-1/2 rounded-full bg-brand-600/20 blur-[120px]" />
+        <div className="relative mx-auto max-w-[1140px] px-4 pb-8 pt-16 text-center sm:px-6 md:pt-24">
+          <a href="#features" className="inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-neutral-700">
+            <span className="rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">New</span>
+            Live on the Stellar test network
+            <ArrowRight className="h-3.5 w-3.5" />
+          </a>
+          <h1 className="mx-auto mt-6 max-w-4xl text-5xl font-medium leading-[1.05] tracking-tight sm:text-7xl">
+            Web3 <span className="text-brand-500">FrontDesk</span>
+          </h1>
+          <p className="mx-auto mt-6 max-w-xl text-lg text-neutral-600">
+            One front desk for your crypto. Hold, deposit, send and gift on Stellar, without the jargon.
+          </p>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <button onClick={start} className={`${PRIMARY_BTN} w-full sm:w-auto`}>
+              Open the app
+            </button>
+            <a href="#features" className={`${SECONDARY_BTN} w-full sm:w-auto`}>
+              See what it does
+            </a>
           </div>
-          <div className="relative h-[340px]">
-            <HeroCard asset={getAsset("xlm")!} label="Stellar" className="left-0 top-20 sm:left-4" rotate="22deg" />
-            <HeroCard asset={getAsset("usdc")!} label="USDC" className="right-0 top-2" rotate="-14deg" />
+
+          <div className="relative mx-auto mt-14 max-w-[560px] pb-10 md:max-w-[640px]">
+            <DashboardPreview />
+            <MiniGiftCard asset={getAsset("usdc")!} label="USDC" className="-left-2 -top-10 -rotate-[10deg] lg:-left-40 lg:top-6" />
+            <MiniGiftCard asset={getAsset("xlm")!} label="Stellar" className="-bottom-2 -right-2 rotate-[8deg] lg:-right-40 lg:bottom-16" />
           </div>
         </div>
       </section>
 
-      {/* Tokens */}
-      <section className="mx-auto grid max-w-[1140px] items-center gap-12 px-4 py-20 sm:px-6 md:grid-cols-2">
-        <div>
-          <h2 className="text-3xl font-medium tracking-tight">Gift the tokens people want</h2>
-          <p className="mt-4 text-neutral-700">
-            Digital dollars (USDC), digital euros (EURC) and Stellar's own coin (XLM). Fast, low-cost, and on the
-            Stellar network.
-          </p>
-        </div>
-        <div className="mx-auto w-full max-w-[480px]">
-          <div className="grid grid-cols-3 gap-3">
-            {SAMPLE_TILES.map((t) => {
-              const a = getAsset(t.id)!;
-              return (
-                <div key={t.key} className={`rounded-xl bg-gradient-to-br p-3 shadow-sm ${t.bg}`}>
-                  <AssetIcon asset={a} size="sm" />
-                  <div className="mt-3 flex items-end justify-between">
-                    <span className="text-lg font-semibold">{t.amount}</span>
-                    <span className="text-[10px] uppercase text-neutral-600">{a.symbol}</span>
-                  </div>
-                </div>
-              );
-            })}
+      {/* Built on */}
+      <section className="mx-auto max-w-[1140px] px-4 py-12 text-center sm:px-6">
+        <p className="text-sm text-neutral-500">Built on the Stellar network</p>
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
+          {["xlm", "usdc", "eurc"].map((id) => {
+            const a = getAsset(id)!;
+            return (
+              <div key={id} className="flex items-center gap-2.5 text-neutral-700">
+                <AssetIcon asset={a} size="sm" />
+                <span className="text-sm font-semibold">{a.symbol}</span>
+              </div>
+            );
+          })}
+          <div className="flex items-center gap-2.5 text-neutral-700">
+            <ShieldCheck className="h-5 w-5" />
+            <span className="text-sm font-semibold">Soroban smart contracts</span>
           </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section id="features" className="mx-auto max-w-[1140px] scroll-mt-16 px-4 py-20 sm:px-6">
+        <SectionTitle eyebrow="What it does" title="Everything at the front desk" body="The everyday things you do with crypto, in one calm place." />
+        <div className="mt-12 grid gap-4 md:grid-cols-3">
+          {FEATURES.map(({ icon: Icon, title, body, points }) => (
+            <div key={title} className="rounded-3xl bg-card p-6 sm:p-7">
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand-50 text-brand-500">
+                <Icon className="h-5 w-5" />
+              </span>
+              <h3 className="mt-5 text-lg font-semibold">{title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-neutral-600">{body}</p>
+              <ul className="mt-5 space-y-2.5">
+                {points.map((p) => (
+                  <li key={p} className="flex items-start gap-2.5 text-sm text-neutral-700">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" /> {p}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </section>
 
       {/* How it works */}
-      <section className="bg-surface">
+      <section id="how" className="scroll-mt-16 bg-surface/50">
         <div className="mx-auto max-w-[1140px] px-4 py-20 sm:px-6">
-          <h2 className="text-center text-3xl font-medium tracking-tight">How it works</h2>
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
-            {[
-              { icon: Gift, title: "Pick a token", body: "Choose USDC, EURC or XLM on Stellar." },
-              { icon: Link2, title: "Send a link", body: "Share a gift link or send it straight to an inbox." },
-              { icon: Wallet, title: "They claim it", body: "It lands in their own wallet. They can hold it or withdraw anytime." },
-            ].map(({ icon: Icon, title, body }) => (
-              <div key={title} className="rounded-2xl bg-card p-6">
-                <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand-50 text-brand-600">
-                  <Icon className="h-5 w-5" />
-                </span>
-                <h3 className="mt-4 font-semibold">{title}</h3>
-                <p className="mt-1 text-sm text-neutral-600">{body}</p>
+          <SectionTitle eyebrow="How it works" title="Three steps, no setup" />
+          <div className="mt-12 grid gap-4 md:grid-cols-3">
+            {STEPS.map((s) => (
+              <div key={s.n} className="rounded-3xl bg-card p-6 sm:p-7">
+                <p className="font-mono text-sm text-brand-500">{s.n}</p>
+                <h3 className="mt-4 text-lg font-semibold">{s.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-neutral-600">{s.body}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-neutral-200">
-        <div className="mx-auto flex max-w-[1140px] flex-col items-center justify-between gap-2 px-4 py-8 text-sm text-neutral-500 sm:flex-row sm:px-6">
-          <span>© {new Date().getFullYear()} Lumecard</span>
+      {/* Why Lumecard */}
+      <section className="mx-auto max-w-[1140px] px-4 py-20 sm:px-6">
+        <SectionTitle eyebrow="Why Lumecard" title="Crypto, without the sharp edges" />
+        <div className="mx-auto mt-12 grid max-w-4xl gap-4 md:grid-cols-2">
+          <div className="rounded-3xl bg-card p-6 sm:p-7">
+            <p className="text-sm font-semibold text-neutral-500">The usual way</p>
+            <ul className="mt-5 space-y-4">
+              {COMPARE.map((c) => (
+                <li key={c.other} className="flex items-start gap-3 text-sm text-neutral-600">
+                  <X className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400" /> {c.other}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-3xl bg-gradient-to-br from-ink via-[#2a1a12] to-brand-700 p-6 sm:p-7">
+            <p className="flex items-center gap-2 text-sm font-semibold text-white">
+              <LogoMark className="h-4 w-4" /> With Lumecard
+            </p>
+            <ul className="mt-5 space-y-4">
+              {COMPARE.map((c) => (
+                <li key={c.ours} className="flex items-start gap-3 text-sm text-white">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-300" /> {c.ours}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* Numbers */}
+      <section className="mx-auto max-w-[1140px] px-4 pb-20 sm:px-6">
+        <div className="grid gap-4 sm:grid-cols-3">
+          {STATS.map((s) => (
+            <div key={s.label} className="rounded-3xl bg-card p-6 text-center sm:p-8">
+              <p className="text-5xl font-medium tracking-tight">{s.value}</p>
+              <p className="mt-2 text-sm text-neutral-600">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Built to be safe */}
+      <section className="mx-auto max-w-[1140px] px-4 pb-20 sm:px-6">
+        <div className="grid gap-4 md:grid-cols-3">
+          {[
+            { icon: KeyRound, title: "You hold the keys", body: "Every action is approved in your own wallet. Lumecard has no way to move your money." },
+            { icon: Clock, title: "Gifts can come back", body: "Set an expiry. If nobody claims a gift in time, you take it back." },
+            { icon: Link2, title: "No server in the middle", body: "Links, claims and refunds run on a smart contract, not on a company database." },
+          ].map(({ icon: Icon, title, body }) => (
+            <div key={title} className="flex gap-4 rounded-3xl bg-card p-6">
+              <Icon className="mt-0.5 h-5 w-5 shrink-0 text-brand-500" />
+              <div>
+                <h3 className="font-semibold">{title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-neutral-600">{body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="mx-auto max-w-3xl scroll-mt-16 px-4 pb-20 sm:px-6">
+        <SectionTitle eyebrow="FAQ" title="Questions, answered" />
+        <div className="mt-10 space-y-3">
+          {FAQ.map((f) => (
+            <details key={f.q} className="group rounded-2xl bg-card px-5 py-4">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+                {f.q}
+                <ChevronDown className="h-4 w-4 shrink-0 text-neutral-500 transition group-open:rotate-180" />
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-neutral-600">{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      {/* Closing call */}
+      <section className="mx-auto max-w-[1140px] px-4 pb-20 sm:px-6">
+        <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-ink via-[#2a1a12] to-brand-700 px-6 py-14 text-center sm:py-20">
+          <div aria-hidden className="dot-grid pointer-events-none absolute inset-0 opacity-60" />
+          <div className="relative">
+            <h2 className="mx-auto max-w-xl text-balance text-3xl font-medium tracking-tight sm:text-5xl">Your crypto, with a front desk.</h2>
+            <p className="mx-auto mt-4 max-w-md text-white/70">Connect a wallet and try it on the test network in a minute.</p>
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <button onClick={start} className={`${PRIMARY_BTN} w-full sm:w-auto`}>
+                Open the app
+              </button>
+              <Link to="/guide" className={`${SECONDARY_BTN} w-full sm:w-auto`}>
+                Read the guide
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer className="border-t border-white/[0.06]">
+        <div className="mx-auto flex max-w-[1140px] flex-col items-center justify-between gap-3 px-4 py-8 text-sm text-neutral-500 sm:flex-row sm:px-6">
+          <span>© {new Date().getFullYear()} Lumecard. Web3 FrontDesk.</span>
           <div className="flex gap-6">
+            <a href="#features">Features</a>
+            <a href="#faq">FAQ</a>
             <Link to="/guide" className="font-medium text-neutral-700">
               Guide
             </Link>
             <a href="#">Terms</a>
             <a href="#">Privacy</a>
-            <a href="#">Support</a>
           </div>
         </div>
       </footer>

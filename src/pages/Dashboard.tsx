@@ -40,16 +40,16 @@ export default function Dashboard() {
       <Header signedIn />
       <main className="flex flex-col md:min-h-[calc(100vh-48px)] md:flex-row">
         {/* Right side: balance card, separated from the main side by a line */}
-        <aside className="hidden p-6 md:order-2 md:block md:w-[392px] md:shrink-0 md:border-l md:border-white/[0.06]">
+        <aside className="hidden p-4 md:order-2 xl:p-6 md:block md:w-[290px] md:shrink-0 lg:w-[330px] xl:w-[392px] md:border-l md:border-white/[0.06]">
           <div className="md:sticky md:top-[72px]">
-          <section className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-ink via-[#2a1a12] to-brand-700 p-5 text-white md:aspect-[4/3]">
+          <section className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-ink via-[#2a1a12] to-brand-700 p-4 text-white md:aspect-[5/4] xl:p-5 xl:aspect-[4/3]">
             <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand-500/30 blur-3xl" />
             <div className="relative flex h-full flex-col justify-between gap-6">
               <div>
                 <button onClick={toggleHide} className="flex items-center gap-1.5 text-sm text-white/60" aria-label={hidden ? "Show balance" : "Hide balance"}>
                   Total balance {hidden ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                 </button>
-                <p className="mt-1 text-4xl font-semibold tracking-tight">
+                <p className="mt-1 text-3xl font-semibold tracking-tight xl:text-4xl">
                   {loading ? <span className="inline-block h-10 w-40 animate-pulse rounded-lg bg-white/15 align-middle" /> : hidden ? "****" : fmtUsd(totalUsd)}
                 </p>
                 <p className="mt-1 text-sm text-white/50">
@@ -60,7 +60,7 @@ export default function Dashboard() {
                       : `Across ${tokenCount} ${tokenCount === 1 ? "token" : "tokens"}`}
                 </p>
               </div>
-              <div className="flex justify-end gap-4">
+              <div className="flex justify-end gap-3 xl:gap-4">
                 {ACTIONS.map(({ id, label, icon: Icon, to }) => {
                   const primary = id === "gift";
                   return (
@@ -69,7 +69,7 @@ export default function Dashboard() {
                       onClick={() => (to ? navigate(to) : id === "deposit" ? openDeposit() : openWithdraw())}
                       className="flex flex-col items-center gap-2"
                     >
-                      <span className={`grid h-10 w-10 place-items-center rounded-xl ${primary ? "bg-card text-brand-700" : "bg-white/10 text-white ring-1 ring-white/15"}`}>
+                      <span className={`grid h-9 w-9 place-items-center rounded-xl xl:h-10 xl:w-10 ${primary ? "bg-card text-brand-700" : "bg-white/10 text-white ring-1 ring-white/15"}`}>
                         <Icon className="h-5 w-5" />
                       </span>
                       <span className="text-xs text-white/80">{label}</span>
