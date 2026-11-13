@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit/sdk";
 import { defaultModules } from "@creit.tech/stellar-wallets-kit/modules/utils";
+import { errorText } from "../chain/gift";
 import { KitEventType, Networks } from "@creit.tech/stellar-wallets-kit/types";
 
 /**
@@ -35,11 +36,32 @@ const AuthContext = createContext<AuthState>({
 
 export const useAuth = () => useContext(AuthContext);
 
-let kitStarted = false;
-function startKit() {
-  if (kitStarted) return;
-  StellarWalletsKit.init({ modules: defaultModules(), network: Networks.TESTNET });
-  kitStarted = true;
+/** Free project id from cloud.reown.com. Lets mobile wallets (Varial, Freighter mobile, Lobstr) connect. */
+const WALLETCONNECT_ID = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as string | undefined;
+
+let kitStarted: Promise<void> | undefined;
+function startKit(): Promise<void> {
+  kitStarted ??= (async () => {
+    const modules = defaultModules();
+    if (WALLETCONNECT_ID) {
+      // Loaded only when configured, because it is a large download.
+      const { WalletConnectModule, WalletConnectTargetChain } = await import("@creit.tech/stellar-wallets-kit/modules/wallet-connect");
+      modules.push(
+        new WalletConnectModule({
+          projectId: WALLETCONNECT_ID,
+          allowedChains: [WalletConnectTargetChain.TESTNET],
+          metadata: {
+            name: "Lumecard",
+            description: "Send crypto as a gift card",
+            url: window.location.origin,
+            icons: [`${window.location.origin}/logo.png`],
+          },
+        }),
+      );
+    }
+    StellarWalletsKit.init({ modules, network: Networks.TESTNET });
+  })();
+  return kitStarted;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -48,19 +70,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authError, setAuthError] = useState<string>();
 
   useEffect(() => {
-    startKit();
     let cancelled = false;
+    let offState = () => {};
+    let offDisconnect = () => {};
 
-    // Pick up a wallet connected on a previous visit.
-    StellarWalletsKit.getAddress()
-      .then(({ address }) => !cancelled && setAddress(address || undefined))
-      .catch(() => {
-        /* nothing remembered */
+    startKit()
+      .then(async () => {
+        if (cancelled) return;
+        offState = StellarWalletsKit.on(KitEventType.STATE_UPDATED, (e) => setAddress(e.payload.address || undefined));
+        offDisconnect = StellarWalletsKit.on(KitEventType.DISCONNECT, () => setAddress(undefined));
+        // Pick up a wallet connected on a previous visit.
+        try {
+          const { address } = await StellarWalletsKit.getAddress();
+          if (!cancelled) setAddress(address || undefined);
+        } catch {
+          /* nothing remembered */
+        }
       })
+      .catch((e) => console.error("Wallet kit failed to start:", e))
       .finally(() => !cancelled && setReady(true));
 
-    const offState = StellarWalletsKit.on(KitEventType.STATE_UPDATED, (e) => setAddress(e.payload.address || undefined));
-    const offDisconnect = StellarWalletsKit.on(KitEventType.DISCONNECT, () => setAddress(undefined));
     return () => {
       cancelled = true;
       offState();
@@ -70,12 +99,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async () => {
     try {
+      await startKit();
       const { address } = await StellarWalletsKit.authModal();
       setAddress(address || undefined);
       setAuthError(undefined);
       return address || undefined;
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = errorText(e);
       console.error("Wallet connect failed:", e);
       // Closing the window without choosing is not a problem.
       if (!/clos|cancel|dismiss|exit|abort/i.test(msg)) setAuthError(msg || "Could not connect to your wallet");

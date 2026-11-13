@@ -93,6 +93,28 @@ const toHex = (b: Uint8Array) => Array.from(b, (x) => x.toString(16).padStart(2,
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Turns raw network errors into something a person can act on. */
+/** Wallets often reject with a plain object like { code, message } instead of an Error. */
+export function errorText(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (typeof e === "string") return e;
+  if (e && typeof e === "object") {
+    const o = e as { message?: unknown; error?: unknown; reason?: unknown };
+    for (const v of [o.message, o.error, o.reason]) {
+      if (typeof v === "string" && v) return v;
+      if (v && typeof v === "object") {
+        const inner = errorText(v);
+        if (inner) return inner;
+      }
+    }
+    try {
+      return JSON.stringify(e);
+    } catch {
+      return "";
+    }
+  }
+  return String(e ?? "");
+}
+
 export function friendlyError(e: unknown): string {
   // Classic (non-contract) transactions are rejected with result codes.
   const codes = (e as { response?: { data?: { extras?: { result_codes?: { operations?: string[]; transaction?: string } } } } })?.response?.data
@@ -105,7 +127,7 @@ export function friendlyError(e: unknown): string {
     if (/tx_bad_auth/.test(all)) return "That wasn't authorised.";
     return "The network rejected the transaction.";
   }
-  const msg = e instanceof Error ? e.message : String(e);
+  const msg = errorText(e);
   // The person closed or refused the request in their wallet.
   if (/declin|reject|denied|cancel|refus|user closed|closed the/i.test(msg)) return "You cancelled the request in your wallet.";
   // Why the network refused to even accept a transaction (see signAndSend).
