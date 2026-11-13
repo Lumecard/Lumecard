@@ -24,10 +24,12 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
          <WithdrawProvider>
           <ConnectWalletProvider>
             <Routes>
-              <Route path="/" element={<Landing />} />
+              {/* The dashboard is the first screen. The landing page lives at /welcome. */}
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/welcome" element={<Landing />} />
               <Route path="/guide" element={<Guide />} />
-              <Route path="/app" element={<RequireAuth><Dashboard /></RequireAuth>} />
-              <Route path="/app/token/:id" element={<RequireAuth><TokenPage /></RequireAuth>} />
+              <Route path="/app" element={<Navigate to="/" replace />} />
+              <Route path="/app/token/:id" element={<TokenPage />} />
               <Route path="/app/gifts/create" element={<RequireAuth><CreateGift /></RequireAuth>} />
               {/* Claim page stays public: recipients sign in from there */}
               <Route path="/g/:id" element={<ClaimGift />} />

@@ -157,15 +157,20 @@ export function Header({ landing }: { signedIn?: boolean; landing?: boolean }) {
     <header className="sticky top-0 z-40 border-b border-neutral-200/70 bg-[#0e0d12]/80 backdrop-blur-md">
       <div className="flex h-12 w-full items-center justify-between px-4 sm:px-6">
         <div className="flex items-center gap-2">
-          <Link to={signedIn ? "/app" : "/"}>
+          <Link to="/">
             <Logo />
           </Link>
           {showBack && (
-            <button onClick={() => navigate("/app")} aria-label="Back" className="grid h-8 w-8 place-items-center rounded-full text-white">
+            <button onClick={() => navigate("/")} aria-label="Back" className="grid h-8 w-8 place-items-center rounded-full text-white">
               <ArrowLeft className="h-5 w-5" />
             </button>
           )}
         </div>
+        {!landing && !signedIn && (
+          <Link to="/welcome" className="ml-auto mr-4 hidden text-sm text-neutral-600 sm:inline">
+            About
+          </Link>
+        )}
         {landing && !signedIn && (
           <nav className="hidden items-center gap-7 text-sm text-neutral-600 md:flex">
             <a href="#features">Features</a>
@@ -185,7 +190,7 @@ export function Header({ landing }: { signedIn?: boolean; landing?: boolean }) {
           </button>
         ) : (
           <button
-            onClick={() => openConnect(() => navigate("/app"))}
+            onClick={() => openConnect()}
             className="whitespace-nowrap rounded-full bg-ink px-3.5 py-1.5 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),inset_0_-2px_0_rgba(0,0,0,0.4)] sm:px-4"
           >
             Connect wallet

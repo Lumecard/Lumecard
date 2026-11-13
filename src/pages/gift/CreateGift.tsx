@@ -65,7 +65,7 @@ export default function CreateGift() {
             asset={asset}
             draft={draft}
             gift={created}
-            onFinish={() => navigate("/app")}
+            onFinish={() => navigate("/")}
             onAnother={() => {
               setDraft(EMPTY);
               setCreated(undefined);

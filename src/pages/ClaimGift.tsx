@@ -281,7 +281,7 @@ export default function ClaimGift() {
               <GiftCard asset={asset} theme={theme} amount={gift.amount} showValue />
             </div>
             <div className="mt-8 space-y-3">
-              <Link to="/app" className={button}>
+              <Link to="/" className={button}>
                 View my wallet
               </Link>
               <Link to="/app/gifts/create" className="block text-sm font-semibold text-brand-600">

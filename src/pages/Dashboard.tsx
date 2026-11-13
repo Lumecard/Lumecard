@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Header } from "../components/Header";
 import { AssetIcon } from "../components/AssetIcon";
 import { useDeposit } from "../components/DepositModal";
+import { useConnectWallet } from "../components/ConnectWallet";
+import { useAuth } from "../auth/AuthProvider";
 import { TestnetFunding } from "../components/TestnetFunding";
 import { useWithdraw } from "../components/WithdrawModal";
 import { ASSETS, fmtPrice } from "../data/assets";
@@ -33,11 +35,23 @@ export default function Dashboard() {
   const { openWithdraw } = useWithdraw();
   const { amounts, totalUsd, tokenCount, loading, funded, error } = useBalances();
   const [hidden, toggleHide] = useHideBalance();
+  const { ready, authenticated } = useAuth();
+  const { openConnect } = useConnectWallet();
+  // Anyone can look around. Actions that need a wallet ask to connect first, then carry on.
+  const gate = (fn: () => void) => (authenticated ? fn() : openConnect(fn));
   const holdings = ASSETS.filter((a) => (amounts[a.id] ?? 0) > 0);
+
+  if (!ready) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-[#0e0d12]">
+        <span className="h-8 w-8 animate-spin rounded-full border-2 border-neutral-200 border-t-brand-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0e0d12]">
-      <Header signedIn />
+      <Header />
       <main className="flex flex-col md:min-h-[calc(100vh-48px)] md:flex-row">
         {/* Right side: balance card, separated from the main side by a line */}
         <aside className="hidden p-4 md:order-2 xl:p-6 md:block md:w-[290px] md:shrink-0 lg:w-[330px] xl:w-[392px] md:border-l md:border-white/[0.06]">
@@ -50,10 +64,12 @@ export default function Dashboard() {
                   Total balance {hidden ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                 </button>
                 <p className="mt-1 text-3xl font-semibold tracking-tight xl:text-4xl">
-                  {loading ? <span className="inline-block h-10 w-40 animate-pulse rounded-lg bg-white/15 align-middle" /> : hidden ? "****" : fmtUsd(totalUsd)}
+                  {loading ? <span className="inline-block h-10 w-40 animate-pulse rounded-lg bg-white/15 align-middle" /> : hidden ? "****" : authenticated ? fmtUsd(totalUsd) : "$0.00"}
                 </p>
                 <p className="mt-1 text-sm text-white/50">
-                  {error
+                  {!authenticated
+                    ? "Connect a wallet to see your balance"
+                    : error
                     ? "Couldn't reach the network. Retrying…"
                     : !funded
                       ? "Wallet not active yet. Deposit XLM to activate it."
@@ -66,7 +82,7 @@ export default function Dashboard() {
                   return (
                     <button
                       key={id}
-                      onClick={() => (to ? navigate(to) : id === "deposit" ? openDeposit() : openWithdraw())}
+                      onClick={() => gate(() => (to ? navigate(to) : id === "deposit" ? openDeposit() : openWithdraw()))}
                       className="flex flex-col items-center gap-2"
                     >
                       <span className={`grid h-9 w-9 place-items-center rounded-xl xl:h-10 xl:w-10 ${primary ? "bg-card text-brand-700" : "bg-white/10 text-white ring-1 ring-white/15"}`}>
@@ -79,15 +95,17 @@ export default function Dashboard() {
               </div>
             </div>
           </section>
-          <div className="mt-4 [&>*]:mt-0">
-            <TestnetFunding />
-          </div>
+          {authenticated && (
+            <div className="mt-4 [&>*]:mt-0">
+              <TestnetFunding />
+            </div>
+          )}
           </div>
         </aside>
         {/* Main side */}
         <div className="relative order-2 min-w-0 flex-1 px-4 pb-16 pt-8 sm:px-6 md:order-1">
         <div aria-hidden className="dot-grid pointer-events-none absolute inset-x-0 top-0 h-[420px]" /><div className="relative mx-auto w-full max-w-[760px]">
-          <button onClick={() => navigate("/app/gifts/create")} className="mb-6 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-brand-600 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-2px_0_rgba(0,0,0,0.25)] md:hidden">
+          <button onClick={() => gate(() => navigate("/app/gifts/create"))} className="mb-6 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-brand-600 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-2px_0_rgba(0,0,0,0.25)] md:hidden">
             <Gift className="h-4 w-4" /> Send a gift
           </button>
 
@@ -118,7 +136,18 @@ export default function Dashboard() {
         <div className="mt-10">
           <section>
             <h2 className="mb-4 text-lg font-semibold tracking-tight">My portfolio</h2>
-            {holdings.length > 0 ? (
+            {!authenticated ? (
+              <EmptyState
+                icon={Inbox}
+                title="Connect your wallet"
+                body="Connect a Stellar wallet to see what you hold."
+                action={
+                  <button onClick={() => openConnect()} className="rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white">
+                    Connect wallet
+                  </button>
+                }
+              />
+            ) : holdings.length > 0 ? (
               <div className="divide-y divide-neutral-100 overflow-hidden rounded-2xl bg-card">
                 {holdings.map((a) => {
                   const amt = amounts[a.id];
@@ -146,7 +175,7 @@ export default function Dashboard() {
                 title="Nothing here yet"
                 body="Grow your portfolio by receiving gifts or depositing tokens."
                 action={
-                  <button onClick={openDeposit} className="rounded-full border border-neutral-200 px-4 py-2 text-sm font-semibold hover:bg-neutral-50">
+                  <button onClick={() => gate(openDeposit)} className="rounded-full border border-neutral-200 px-4 py-2 text-sm font-semibold hover:bg-neutral-50">
                     Deposit tokens
                   </button>
                 }

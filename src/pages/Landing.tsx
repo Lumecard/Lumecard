@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { ArrowDownToLine, ArrowRight, Check, ChevronDown, Clock, Gift, KeyRound, Link2, Send, ShieldCheck, Wallet, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Header } from "../components/Header";
@@ -156,15 +155,10 @@ const FAQ = [
 
 export default function Landing() {
   const navigate = useNavigate();
-  const { authenticated, stellarAddress } = useAuth();
+  const { authenticated } = useAuth();
   const { openConnect } = useConnectWallet();
 
-  // A connected wallet goes straight to the dashboard.
-  useEffect(() => {
-    if (authenticated && stellarAddress) navigate("/app", { replace: true });
-  }, [authenticated, stellarAddress, navigate]);
-
-  const start = () => openConnect(() => navigate("/app"));
+  const start = () => (authenticated ? navigate("/") : openConnect(() => navigate("/")));
 
   return (
     <div className="min-h-screen overflow-x-hidden">

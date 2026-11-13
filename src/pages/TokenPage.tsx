@@ -96,7 +96,7 @@ export default function TokenPage() {
   const balances = useBalances();
   const asset = getAsset(id);
   const prices = usePrices(asset?.id ?? "", range);
-  if (!asset) return <Navigate to="/app" replace />;
+  if (!asset) return <Navigate to="/" replace />;
 
   const held = balances.amounts[asset.id] ?? 0;
 
