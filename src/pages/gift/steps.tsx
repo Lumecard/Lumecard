@@ -50,7 +50,7 @@ export function PrimaryButton({ children, disabled, onClick }: { children: React
 }
 
 const inputCls =
-  "w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-neutral-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-100";
+  "w-full rounded-xl border border-neutral-200 bg-card px-4 py-3 text-sm outline-none transition placeholder:text-neutral-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-100";
 
 const fmtPrice = (p: number) =>
   p >= 1 ? `$${p.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : `$${p.toPrecision(3)}`;
@@ -83,7 +83,7 @@ export function SelectToken({ onSelect }: { onSelect: (a: Asset) => void }) {
             key={f.id}
             onClick={() => setFilter(f.id)}
             className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
-              filter === f.id ? "bg-ink text-white" : "bg-white text-neutral-600 ring-1 ring-neutral-200 hover:ring-neutral-300"
+              filter === f.id ? "bg-ink text-white" : "bg-card text-neutral-600 ring-1 ring-neutral-200 hover:ring-neutral-300"
             }`}
           >
             <f.icon className="h-3.5 w-3.5" />
@@ -92,7 +92,7 @@ export function SelectToken({ onSelect }: { onSelect: (a: Asset) => void }) {
         ))}
       </div>
 
-      <div className="mt-4 max-h-[420px] divide-y divide-neutral-100 overflow-y-auto rounded-2xl border border-neutral-200/80 bg-white">
+      <div className="mt-4 max-h-[420px] divide-y divide-neutral-100 overflow-y-auto rounded-2xl border border-neutral-200/80 bg-card">
         {list.map((a) => (
           <button
             key={a.id}
@@ -120,7 +120,7 @@ const PRESETS = [5, 25, 50, 100];
 
 export function SelectAmount({ asset, amount, onChange, onContinue }: { asset: Asset; amount: number; onChange: (n: number) => void; onContinue: () => void }) {
   return (
-    <div className="rounded-3xl border border-neutral-200/80 bg-white p-6 sm:p-8">
+    <div className="rounded-3xl border border-neutral-200/80 bg-card p-6 sm:p-8">
       <div className="mx-auto mb-6 flex w-fit items-center gap-2 rounded-full bg-surface py-1 pl-1 pr-3 text-sm font-medium">
         <AssetIcon asset={asset} size="sm" /> {asset.name}
       </div>
@@ -317,7 +317,7 @@ export function Preview({
             key={id}
             disabled={soon}
             onClick={() => update({ delivery: id })}
-            className={`flex items-center gap-3 rounded-2xl border bg-white px-4 py-3 text-left transition disabled:cursor-not-allowed disabled:opacity-50 ${
+            className={`flex items-center gap-3 rounded-2xl border bg-card px-4 py-3 text-left transition disabled:cursor-not-allowed disabled:opacity-50 ${
               draft.delivery === id ? "border-brand-600 ring-4 ring-brand-100" : "border-neutral-200"
             }`}
           >
@@ -413,7 +413,7 @@ export function Checkout({
         </div>
       </div>
 
-      <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-neutral-200 bg-white p-4">
+      <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-neutral-200 bg-card p-4">
         <input
           type="checkbox"
           checked={draft.coverSetup}
@@ -563,7 +563,7 @@ export function Done({
           onClick={() => {
             navigator.clipboard?.writeText(link).then(() => setCopied(true)).catch(() => {});
           }}
-          className="flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold"
+          className="flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-card px-3 py-2 text-sm font-semibold"
         >
           {copied ? <Check className="h-4 w-4 text-brand-600" /> : <Copy className="h-4 w-4" />}
           {copied ? "Copied" : "Copy"}

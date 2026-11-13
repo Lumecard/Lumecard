@@ -1,16 +1,11 @@
 import { Asset, BASE_FEE, Horizon, Networks, Operation, StrKey, TransactionBuilder } from "@stellar/stellar-sdk";
-import { HORIZON_URL, TOKEN_ISSUERS, type SignHash } from "./gift";
+import { HORIZON_URL, TOKEN_ISSUERS, type SignTx } from "./gift";
 
 /**
  * Sends a token from the user's wallet to any Stellar address (withdraw).
- * Self-contained: signing is passed in, so it runs with Privy in the app and
+ * Signing is passed in, so it runs with the user's wallet in the app and
  * with a plain keypair in tests.
  */
-const toBase64 = (b: Uint8Array) => {
-  let bin = "";
-  b.forEach((x) => (bin += String.fromCharCode(x)));
-  return btoa(bin);
-};
 
 /** Pulls the useful part out of a Horizon rejection. */
 function horizonMessage(e: unknown): string {
@@ -33,7 +28,7 @@ export async function sendPaymentOnChain(opts: {
   tokenId: string;
   /** Whole tokens, e.g. 2.5 */
   amount: number;
-  sign: SignHash;
+  sign: SignTx;
 }): Promise<{ txHash: string }> {
   const destination = opts.destination.trim();
   if (!isStellarAddress(destination)) throw new Error("That doesn't look like a Stellar address. It starts with G and is 56 characters long.");
@@ -78,10 +73,10 @@ export async function sendPaymentOnChain(opts: {
     : Operation.createAccount({ destination, startingBalance: amount });
 
   const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: Networks.TESTNET }).addOperation(op).setTimeout(120).build();
-  tx.addSignature(opts.source, toBase64(await opts.sign(tx.hash())));
+  const signed = TransactionBuilder.fromXDR(await opts.sign(tx.toXDR()), Networks.TESTNET);
 
   try {
-    const res = await server.submitTransaction(tx);
+    const res = await server.submitTransaction(signed);
     return { txHash: res.hash };
   } catch (e) {
     throw new Error(horizonMessage(e));

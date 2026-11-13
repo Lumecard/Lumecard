@@ -1,13 +1,12 @@
-import { ArrowDownLeft, ArrowUpRight, ChevronRight, Eye, Gift, Inbox, Send } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { ArrowDownLeft, ArrowUpRight, ChevronRight, Eye, EyeOff, Gift, Inbox } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Header } from "../components/Header";
 import { AssetIcon } from "../components/AssetIcon";
 import { useDeposit } from "../components/DepositModal";
 import { TestnetFunding } from "../components/TestnetFunding";
 import { useWithdraw } from "../components/WithdrawModal";
-import { SentGifts } from "../components/SentGifts";
 import { ASSETS, fmtPrice } from "../data/assets";
-import { fmtAmount, fmtUsd, useBalances } from "../chain/Balances";
+import { fmtAmount, fmtUsd, useBalances, useHideBalance } from "../chain/Balances";
 
 const ACTIONS = [
   { id: "gift", label: "Send gift", icon: Gift, to: "/app/gifts/create" },
@@ -17,7 +16,7 @@ const ACTIONS = [
 
 function EmptyState({ icon: Icon, title, body, action }: { icon: typeof Inbox; title: string; body: string; action: React.ReactNode }) {
   return (
-    <div className="flex flex-col items-center rounded-2xl border border-dashed border-neutral-200 bg-white px-6 py-10 text-center">
+    <div className="flex flex-col items-center rounded-2xl bg-card px-6 py-10 text-center">
       <span className="grid h-11 w-11 place-items-center rounded-full bg-brand-50 text-brand-600">
         <Icon className="h-5 w-5" />
       </span>
@@ -33,58 +32,64 @@ export default function Dashboard() {
   const { openDeposit } = useDeposit();
   const { openWithdraw } = useWithdraw();
   const { amounts, totalUsd, tokenCount, loading, funded, error } = useBalances();
+  const [hidden, toggleHide] = useHideBalance();
   const holdings = ASSETS.filter((a) => (amounts[a.id] ?? 0) > 0);
 
   return (
-    <div className="min-h-screen bg-[#fafafb]">
+    <div className="min-h-screen bg-[#0e0d12]">
       <Header signedIn />
-      <main className="mx-auto max-w-[1080px] px-4 pb-16 pt-6 sm:px-6">
-        {/* Balance */}
-        <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-ink via-[#2a1a12] to-brand-700 p-6 text-white sm:p-8">
-          <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand-500/30 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-20 left-1/3 h-48 w-48 rounded-full bg-amber-300/10 blur-3xl" />
-
-          <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="flex items-center gap-1.5 text-sm text-white/60">
-                Total balance <Eye className="h-3.5 w-3.5" />
-              </p>
-              <p className="mt-1 text-4xl font-semibold tracking-tight sm:text-5xl">
-                {loading ? <span className="inline-block h-10 w-40 animate-pulse rounded-lg bg-white/15 align-middle" /> : fmtUsd(totalUsd)}
-              </p>
-              <p className="mt-1 text-sm text-white/50">
-                {error
-                  ? "Couldn't reach the network. Retrying…"
-                  : !funded
-                    ? "Wallet not active yet. Deposit XLM to activate it."
-                    : `Across ${tokenCount} ${tokenCount === 1 ? "token" : "tokens"}`}
-              </p>
-            </div>
-            <div className="flex gap-3">
-              {ACTIONS.map(({ id, label, icon: Icon, to }) => {
-                const primary = id === "gift";
-                return (
-                  <button
-                    key={id}
-                    onClick={() => (to ? navigate(to) : id === "deposit" ? openDeposit() : openWithdraw())}
-                    className="group flex flex-col items-center gap-2"
-                  >
-                    <span
-                      className={`grid h-12 w-12 place-items-center rounded-2xl transition ${
-                        primary ? "bg-white text-brand-700 group-hover:bg-brand-50" : "bg-white/10 text-white ring-1 ring-white/15 group-hover:bg-white/20"
-                      }`}
+      <main className="flex flex-col md:min-h-[calc(100vh-48px)] md:flex-row">
+        {/* Right side: balance card, separated from the main side by a line */}
+        <aside className="hidden p-6 md:order-2 md:block md:w-[392px] md:shrink-0 md:border-l md:border-white/[0.06]">
+          <div className="md:sticky md:top-[72px]">
+          <section className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-ink via-[#2a1a12] to-brand-700 p-5 text-white md:aspect-[4/3]">
+            <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand-500/30 blur-3xl" />
+            <div className="relative flex h-full flex-col justify-between gap-6">
+              <div>
+                <button onClick={toggleHide} className="flex items-center gap-1.5 text-sm text-white/60" aria-label={hidden ? "Show balance" : "Hide balance"}>
+                  Total balance {hidden ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                </button>
+                <p className="mt-1 text-4xl font-semibold tracking-tight">
+                  {loading ? <span className="inline-block h-10 w-40 animate-pulse rounded-lg bg-white/15 align-middle" /> : hidden ? "****" : fmtUsd(totalUsd)}
+                </p>
+                <p className="mt-1 text-sm text-white/50">
+                  {error
+                    ? "Couldn't reach the network. Retrying…"
+                    : !funded
+                      ? "Wallet not active yet. Deposit XLM to activate it."
+                      : `Across ${tokenCount} ${tokenCount === 1 ? "token" : "tokens"}`}
+                </p>
+              </div>
+              <div className="flex justify-end gap-4">
+                {ACTIONS.map(({ id, label, icon: Icon, to }) => {
+                  const primary = id === "gift";
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => (to ? navigate(to) : id === "deposit" ? openDeposit() : openWithdraw())}
+                      className="flex flex-col items-center gap-2"
                     >
-                      <Icon className="h-5 w-5" />
-                    </span>
-                    <span className="text-xs text-white/80">{label}</span>
-                  </button>
-                );
-              })}
+                      <span className={`grid h-10 w-10 place-items-center rounded-xl ${primary ? "bg-card text-brand-700" : "bg-white/10 text-white ring-1 ring-white/15"}`}>
+                        <Icon className="h-5 w-5" />
+                      </span>
+                      <span className="text-xs text-white/80">{label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+          </section>
+          <div className="mt-4 [&>*]:mt-0">
+            <TestnetFunding />
           </div>
-        </section>
-
-        <TestnetFunding />
+          </div>
+        </aside>
+        {/* Main side */}
+        <div className="relative order-2 min-w-0 flex-1 px-4 pb-16 pt-8 sm:px-6 md:order-1">
+        <div aria-hidden className="dot-grid pointer-events-none absolute inset-x-0 top-0 h-[420px]" /><div className="relative mx-auto w-full max-w-[760px]">
+          <button onClick={() => navigate("/app/gifts/create")} className="mb-6 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-brand-600 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-2px_0_rgba(0,0,0,0.25)] md:hidden">
+            <Gift className="h-4 w-4" /> Send a gift
+          </button>
 
         {/* Tokens */}
         <section className="mt-10">
@@ -99,7 +104,7 @@ export default function Dashboard() {
               <button
                 key={a.id}
                 onClick={() => navigate(`/app/token/${a.id}`)}
-                className="flex w-[120px] shrink-0 flex-col items-start rounded-2xl border border-neutral-200/80 bg-white p-3.5 text-left"
+                className="flex w-[120px] shrink-0 flex-col items-start rounded-2xl bg-card p-3.5 text-left"
               >
                 <AssetIcon asset={a} size="md" />
                 <span className="mt-3 text-sm font-semibold">{a.symbol}</span>
@@ -110,11 +115,11 @@ export default function Dashboard() {
         </section>
 
         {/* Portfolio + gifts */}
-        <div className="mt-10 grid gap-6 md:grid-cols-2">
+        <div className="mt-10">
           <section>
             <h2 className="mb-4 text-lg font-semibold tracking-tight">My portfolio</h2>
             {holdings.length > 0 ? (
-              <div className="divide-y divide-neutral-100 overflow-hidden rounded-2xl border border-neutral-200/80 bg-white">
+              <div className="divide-y divide-neutral-100 overflow-hidden rounded-2xl bg-card">
                 {holdings.map((a) => {
                   const amt = amounts[a.id];
                   return (
@@ -148,23 +153,8 @@ export default function Dashboard() {
               />
             )}
           </section>
-          <section>
-            <h2 className="mb-4 text-lg font-semibold tracking-tight">Sent gifts</h2>
-            <SentGifts
-              empty={
-                <EmptyState
-                  icon={Send}
-                  title="No gifts sent"
-                  body="Send crypto to anyone with just a link."
-                  action={
-                    <Link to="/app/gifts/create" className="rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white">
-                      Send your first gift
-                    </Link>
-                  }
-                />
-              }
-            />
-          </section>
+        </div>
+        </div>
         </div>
       </main>
     </div>

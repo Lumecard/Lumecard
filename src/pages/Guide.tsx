@@ -16,13 +16,13 @@ function Code({ code }: { code: string }) {
       <div className="flex justify-end px-2 pt-2">
         <button
           onClick={() => navigator.clipboard?.writeText(text).then(() => setCopied(true)).catch(() => {})}
-          className="inline-flex h-7 items-center gap-1.5 rounded-full bg-neutral-700 px-3 text-xs font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15),inset_0_-2px_0_rgba(0,0,0,0.35)]"
+          className="inline-flex h-7 items-center gap-1.5 rounded-full bg-white/15 px-3 text-xs font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15),inset_0_-2px_0_rgba(0,0,0,0.35)]"
         >
           {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
-      <pre className="overflow-x-auto px-4 pb-4 pt-2 text-[13px] leading-relaxed text-neutral-100">
+      <pre className="overflow-x-auto px-4 pb-4 pt-2 text-[13px] leading-relaxed text-fg">
         <code>{text}</code>
       </pre>
     </div>
@@ -42,7 +42,7 @@ function Section({ id, n, title, children }: { id: string; n: string; title: str
 const P = ({ children }: { children: ReactNode }) => <p>{children}</p>;
 
 const Mono = ({ children }: { children: ReactNode }) => (
-  <code className="rounded-md bg-surface px-1.5 py-0.5 text-[13px] text-ink">{children}</code>
+  <code className="rounded-md bg-surface px-1.5 py-0.5 text-[13px] text-fg">{children}</code>
 );
 
 function Note({ children }: { children: ReactNode }) {
@@ -64,7 +64,7 @@ const TOC = [
 
 export default function Guide() {
   return (
-    <div className="min-h-screen overflow-x-hidden bg-white">
+    <div className="min-h-screen overflow-x-hidden bg-[#0e0d12]">
       <Header />
       <main className="mx-auto max-w-[760px] px-4 pb-24 pt-10 sm:px-6">
         <p className="text-xs font-medium uppercase tracking-wider text-neutral-400">Guide</p>
@@ -370,9 +370,8 @@ export default function App() {
             <Code code={String.raw`npm run dev`} />
             <Note>
               Changing data needs a signature. For a call like <Mono>increment</Mono>, the user's wallet must sign the transaction. Pass a{" "}
-              <Mono>signTransaction</Mono> function when you create the client, then call <Mono>await tx.signAndSend()</Mono>. For wallets you can use{" "}
-              <Mono>@creit.tech/stellar-wallets-kit</Mono> (Freighter, xBull, Lobstr and others) or Privy for email sign-in, which this project uses.
-              The generated <Mono>counter-client/README.md</Mono> shows the exact calls for your contract.
+              <Mono>signTransaction</Mono> function when you create the client, then call <Mono>await tx.signAndSend()</Mono>. For wallets, use{" "}
+              <Mono>@creit.tech/stellar-wallets-kit</Mono> (Freighter, xBull, Lobstr and others), which this project uses. The generated <Mono>counter-client/README.md</Mono> shows the exact calls for your contract.
             </Note>
             <P>When you deploy a new contract, paste its new address into the client. Keep it in one place, for example a config file.</P>
           </Section>
@@ -400,7 +399,7 @@ export default function App() {
             <Code
               code={String.raw`
 Lumecard/
-  client/     the web app (React, Vite, Tailwind, Privy sign-in)
+  client/     the web app (React, Vite, Tailwind, Stellar Wallets Kit)
   lumecard/   the contract (Rust) and its testnet settings
 `}
             />
@@ -410,20 +409,13 @@ Lumecard/
 git clone https://github.com/NileDex/Lumecard.git
 cd Lumecard/client
 npm install
-copy .env.example .env.local          (Windows)  or  cp .env.example .env.local
 npm run dev
 `}
             />
             <P>
-              Put your Privy IDs in <Mono>.env.local</Mono> first (free at <Mono>dashboard.privy.io</Mono>, and add{" "}
-              <Mono>http://localhost:5173</Mono> to the allowed origins):
+              There is nothing to configure: no account or key is needed. Install a Stellar wallet extension such as Freighter or xBull, set it to
+              the test network, and use <Mono>Connect wallet</Mono> in the app.
             </P>
-            <Code
-              code={String.raw`
-VITE_PRIVY_APP_ID=your-privy-app-id
-VITE_PRIVY_CLIENT_ID=your-privy-client-id      (optional)
-`}
-            />
             <P>Test and build the contract:</P>
             <Code
               code={String.raw`

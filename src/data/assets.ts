@@ -24,7 +24,7 @@ export interface Asset {
 // Prices are display-only placeholders until live prices are wired in.
 export const ASSETS: Asset[] = [
   { id: "usdc", name: "USD Coin", symbol: "USDC", category: "stablecoin", popular: true, glyph: "$", gradient: "from-sky-500 to-blue-600", price: 1.0, icon: "/tokens/usdc.svg" },
-  { id: "xlm", name: "Stellar Lumens", symbol: "XLM", category: "crypto", popular: true, glyph: "✦", gradient: "from-neutral-800 to-black", price: 0.1684, icon: "/tokens/xlm.png" },
+  { id: "xlm", name: "Stellar Lumens", symbol: "XLM", category: "crypto", popular: true, glyph: "✦", gradient: "from-[#4a4955] to-black", price: 0.1684, icon: "/tokens/xlm.png" },
   { id: "eurc", name: "Euro Coin", symbol: "EURC", category: "stablecoin", popular: true, glyph: "€", gradient: "from-cyan-600 to-blue-800", price: 1.1, icon: "/tokens/eurc.svg" },
 ];
 

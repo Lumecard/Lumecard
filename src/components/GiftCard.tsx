@@ -80,7 +80,7 @@ function BowSide() {
 /** Wrapped state shown before the recipient (or sender) reveals the card */
 export function WrappedCard({ className = "" }: { className?: string }) {
   return (
-    <div className={`relative aspect-[1.8/1] w-full overflow-hidden rounded-2xl border border-neutral-200 bg-white ${className}`}>
+    <div className={`relative aspect-[1.8/1] w-full overflow-hidden rounded-2xl border border-neutral-200 bg-card ${className}`}>
       {/* One picture for ribbon and bow, so they stay aligned at any size. */}
       <svg viewBox="0 0 360 200" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full" aria-hidden>
         {/* ribbon cross */}

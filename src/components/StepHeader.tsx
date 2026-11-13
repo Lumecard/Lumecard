@@ -16,7 +16,7 @@ export function StepHeader({ title, step, total, onBack }: Props) {
           onClick={onBack}
           disabled={!onBack}
           aria-label="Back"
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50 disabled:invisible"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-neutral-200 bg-card text-neutral-700 hover:bg-neutral-50 disabled:invisible"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>

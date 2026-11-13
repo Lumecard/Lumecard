@@ -21,7 +21,7 @@ function HeroCard({ asset, label, className, rotate }: { asset: Asset; label: st
         </span>
       </div>
       {asset.icon ? (
-        <img src={asset.icon} alt="" draggable={false} className="mt-4 h-16 w-16 rounded-full bg-white/90 p-0.5" />
+        <img src={asset.icon} alt="" draggable={false} className="mt-4 h-16 w-16 rounded-full bg-[#0e0d12]/90 p-0.5" />
       ) : (
         <div className="mt-4 text-6xl font-black drop-shadow">{asset.glyph}</div>
       )}
@@ -31,12 +31,12 @@ function HeroCard({ asset, label, className, rotate }: { asset: Asset; label: st
 }
 
 const SAMPLE_TILES = [
-  { key: "usdc-100", id: "usdc", amount: "$100", bg: "from-sky-50 to-blue-100" },
+  { key: "usdc-100", id: "usdc", amount: "$100", bg: "from-sky-950 to-blue-900" },
   { key: "xlm-500", id: "xlm", amount: "500", bg: "from-neutral-50 to-neutral-200" },
-  { key: "eurc-50", id: "eurc", amount: "€50", bg: "from-cyan-50 to-blue-100" },
-  { key: "usdc-25", id: "usdc", amount: "$25", bg: "from-sky-50 to-blue-100" },
+  { key: "eurc-50", id: "eurc", amount: "€50", bg: "from-cyan-950 to-blue-900" },
+  { key: "usdc-25", id: "usdc", amount: "$25", bg: "from-sky-950 to-blue-900" },
   { key: "xlm-1000", id: "xlm", amount: "1,000", bg: "from-neutral-50 to-neutral-200" },
-  { key: "eurc-20", id: "eurc", amount: "€20", bg: "from-cyan-50 to-blue-100" },
+  { key: "eurc-20", id: "eurc", amount: "€20", bg: "from-cyan-950 to-blue-900" },
 ];
 
 export default function Landing() {
@@ -55,7 +55,7 @@ export default function Landing() {
       <Header />
 
       {/* Hero */}
-      <section className="bg-gradient-to-b from-white to-brand-50">
+      <section className="bg-gradient-to-b from-card to-brand-50">
         <div className="mx-auto grid max-w-[1140px] items-center gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 md:py-24">
           <div>
             <h1 className="text-5xl font-medium leading-[1.1] tracking-tight sm:text-6xl">
@@ -73,7 +73,7 @@ export default function Landing() {
               >
                 Create Your First Gift
               </button>
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1.5 text-xs font-medium text-neutral-600 ring-1 ring-neutral-200">
+              <span className="inline-flex items-center gap-2 rounded-full bg-[#0e0d12]/70 px-3 py-1.5 text-xs font-medium text-neutral-600 ring-1 ring-neutral-200">
                 <span className="text-sm leading-none">✦</span> Built on Stellar
               </span>
             </div>
@@ -122,7 +122,7 @@ export default function Landing() {
               { icon: Link2, title: "Send a link", body: "Share a gift link or send it straight to an inbox." },
               { icon: Wallet, title: "They claim it", body: "It lands in their own wallet. They can hold it or withdraw anytime." },
             ].map(({ icon: Icon, title, body }) => (
-              <div key={title} className="rounded-2xl bg-white p-6">
+              <div key={title} className="rounded-2xl bg-card p-6">
                 <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand-50 text-brand-600">
                   <Icon className="h-5 w-5" />
                 </span>

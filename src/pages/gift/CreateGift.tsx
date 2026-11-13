@@ -33,7 +33,7 @@ export default function CreateGift() {
   const back = step > 0 && step < 5 ? () => setStep((s) => s - 1) : undefined;
 
   return (
-    <div className="min-h-screen bg-[#fafafb]">
+    <div className="min-h-screen bg-[#0e0d12]">
       <Header signedIn />
       <main className={`mx-auto px-4 pb-16 sm:px-6 ${step === 4 ? "max-w-[640px]" : "max-w-[600px]"}`}>
         <StepHeader title={TITLES[step]} step={step} total={TITLES.length} onBack={back} />

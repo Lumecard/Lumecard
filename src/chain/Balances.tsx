@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { ASSETS, getAsset } from "../data/assets";
 
@@ -121,3 +121,21 @@ export const fmtUsd = (n: number) =>
 
 export const fmtAmount = (n: number) =>
   n.toLocaleString(undefined, { maximumFractionDigits: n >= 1 ? 2 : 6 });
+
+/** Shared "hide balance" switch, so the eye on the dashboard and in the wallet panel agree. */
+let hideBalance = false;
+const hideListeners = new Set<() => void>();
+export function useHideBalance(): [boolean, () => void] {
+  const hidden = useSyncExternalStore(
+    (cb) => {
+      hideListeners.add(cb);
+      return () => hideListeners.delete(cb);
+    },
+    () => hideBalance,
+  );
+  const toggle = () => {
+    hideBalance = !hideBalance;
+    hideListeners.forEach((l) => l());
+  };
+  return [hidden, toggle];
+}

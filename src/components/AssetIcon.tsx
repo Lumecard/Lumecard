@@ -19,7 +19,7 @@ export function AssetIcon({ asset, size = "md", className = "" }: { asset: Asset
         src={asset.icon}
         alt={asset.name}
         draggable={false}
-        className={`inline-block shrink-0 rounded-full bg-white object-cover ${sizes[size].replace(/rounded-\S+/, "")} ${className}`}
+        className={`inline-block shrink-0 rounded-full bg-card object-cover ${sizes[size].replace(/rounded-\S+/, "")} ${className}`}
       />
     );
   }

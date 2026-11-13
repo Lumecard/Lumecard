@@ -9,7 +9,7 @@ export function Logo({ light = false }: { light?: boolean }) {
   return (
     <span className="inline-flex items-center gap-2">
       <LogoMark />
-      <span className={`text-2xl font-semibold tracking-tight ${light ? "text-white" : "text-ink"}`}>
+      <span className={`text-2xl font-semibold tracking-tight ${light ? "text-white" : "text-fg"}`}>
         Lumecard
       </span>
     </span>

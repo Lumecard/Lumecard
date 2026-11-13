@@ -9,9 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@privy-io/react-auth": "3.50.0",
+    "@creit.tech/stellar-wallets-kit": "2.8.0",
     "@stellar/stellar-sdk": "17.3.0",
     "lucide-react": "^0.460.0",
+    "preact": "10.29.8",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0"

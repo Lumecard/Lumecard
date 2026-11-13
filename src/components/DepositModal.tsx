@@ -60,7 +60,7 @@ function DepositModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 backdrop-blur-[2px] sm:items-center sm:p-4" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="animate-pop relative w-full max-w-md rounded-t-3xl bg-white p-6 sm:rounded-3xl">
+      <div onClick={(e) => e.stopPropagation()} className="animate-pop relative w-full max-w-md rounded-t-3xl bg-card p-6 sm:rounded-3xl">
         <button onClick={onClose} aria-label="Close" className="absolute right-4 top-4 rounded-full p-1.5 text-neutral-500 hover:bg-neutral-100">
           <X className="h-5 w-5" />
         </button>

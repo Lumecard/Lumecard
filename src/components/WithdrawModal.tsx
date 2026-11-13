@@ -2,7 +2,7 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 import { ArrowLeft, Check, ChevronDown, X } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { fmtAmount, useBalances } from "../chain/Balances";
-import { usePrivySigner } from "../chain/privySigner";
+import { useWalletSigner } from "../chain/walletSigner";
 import { isStellarAddress, sendPaymentOnChain } from "../chain/transfer";
 import { ASSETS, getAsset } from "../data/assets";
 
@@ -20,11 +20,11 @@ export function WithdrawProvider({ children }: { children: ReactNode }) {
 }
 
 const input =
-  "w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-neutral-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-100";
+  "w-full rounded-xl border border-neutral-200 bg-card px-4 py-3 text-sm outline-none transition placeholder:text-neutral-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-100";
 const primary =
   "h-12 w-full rounded-full bg-brand-600 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-3px_0_rgba(0,0,0,0.18)] disabled:cursor-not-allowed disabled:bg-brand-200 disabled:shadow-none";
 const outline =
-  "flex h-12 w-full items-center justify-center gap-2 rounded-full border border-neutral-200 bg-white text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50";
+  "flex h-12 w-full items-center justify-center gap-2 rounded-full border border-neutral-200 bg-card text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50";
 
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-6)}`;
 const floor7 = (n: number) => Math.floor(n * 1e7) / 1e7;
@@ -40,7 +40,7 @@ function maxFor(tokenId: string, amounts: Record<string, number>): number {
 function WithdrawModal({ onClose }: { onClose: () => void }) {
   const { stellarAddress } = useAuth();
   const { amounts, refresh } = useBalances();
-  const signer = usePrivySigner();
+  const signer = useWalletSigner();
 
   const [tokenId, setTokenId] = useState("");
   const [amountText, setAmountText] = useState("");
@@ -74,7 +74,7 @@ function WithdrawModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-[2px] sm:items-center sm:p-4" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="animate-pop relative max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white p-6 sm:rounded-3xl">
+      <div onClick={(e) => e.stopPropagation()} className="animate-pop relative max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-card p-6 sm:rounded-3xl">
         <button onClick={onClose} aria-label="Close" className="absolute right-4 top-4 rounded-full p-1.5 text-neutral-500">
           <X className="h-5 w-5" />
         </button>
@@ -90,7 +90,7 @@ function WithdrawModal({ onClose }: { onClose: () => void }) {
                   setTokenId(e.target.value);
                   setAmountText("");
                 }}
-                className={`${input} appearance-none rounded-full pr-10 ${tokenId ? "text-ink" : "text-neutral-400"}`}
+                className={`${input} appearance-none rounded-full pr-10 ${tokenId ? "text-fg" : "text-neutral-400"}`}
               >
                 <option value="" disabled>
                   Select Token

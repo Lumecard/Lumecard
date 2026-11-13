@@ -1,30 +1,26 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { PrivyProvider, useLogin, usePrivy } from "@privy-io/react-auth";
-import { useCreateWallet } from "@privy-io/react-auth/extended-chains";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit/sdk";
+import { defaultModules } from "@creit.tech/stellar-wallets-kit/modules/utils";
+import { KitEventType, Networks } from "@creit.tech/stellar-wallets-kit/types";
 
 /**
- * Sign-in for Lumecard, backed by Privy.
- *  - "Continue with email" opens Privy's own login modal.
- *  - After login, the user gets a Privy embedded **Stellar** wallet (created once).
- * The wallet is the user's own; Lumecard never holds funds.
+ * "Signing in" is connecting the user's own Stellar wallet (Freighter, xBull, Lobstr and others)
+ * through Stellar Wallets Kit. There is no account and no server: the wallet holds the keys, and the
+ * kit remembers the connection in the browser between visits.
  */
-
-export const PRIVY_APP_ID = import.meta.env.VITE_PRIVY_APP_ID as string | undefined;
-/** Optional: Privy "client ID" for this web client (Privy dashboard, Clients tab). */
-export const PRIVY_CLIENT_ID = (import.meta.env.VITE_PRIVY_CLIENT_ID as string | undefined) || undefined;
-
 interface AuthState {
-  /** Privy SDK has finished loading */
+  /** The kit has finished checking for a remembered connection */
   ready: boolean;
   authenticated: boolean;
+  /** Wallets have no email; kept so screens can show it when there is one */
   email?: string;
-  /** The user's Stellar wallet address (G...), once created */
+  /** The connected wallet's Stellar address (G...) */
   stellarAddress?: string;
-  /** True while the Stellar wallet is being created after first login */
+  /** Always false: wallets are not created for the user any more */
   creatingWallet: boolean;
-  /** False when no Privy app ID is configured */
   configured: boolean;
-  login: () => void;
+  /** Opens the wallet chooser. Resolves with the address, or nothing if the person closed it. */
+  login: () => Promise<string | undefined>;
   logout: () => Promise<void>;
 }
 
@@ -32,109 +28,79 @@ const AuthContext = createContext<AuthState>({
   ready: true,
   authenticated: false,
   creatingWallet: false,
-  configured: false,
-  login: () => {},
+  configured: true,
+  login: async () => undefined,
   logout: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
 
-/** Wraps the app with Privy (when configured) and exposes a simple auth state. */
+let kitStarted = false;
+function startKit() {
+  if (kitStarted) return;
+  StellarWalletsKit.init({ modules: defaultModules(), network: Networks.TESTNET });
+  kitStarted = true;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  if (!PRIVY_APP_ID) {
-    console.warn("VITE_PRIVY_APP_ID is not set. Add it to client/.env.local to enable login.");
-    return (
-      <AuthContext.Provider
-        value={{
-          ready: true,
-          authenticated: false,
-          creatingWallet: false,
-          configured: false,
-          login: () => alert("Login isn't configured yet: set VITE_PRIVY_APP_ID in client/.env.local"),
-          logout: async () => {},
-        }}
-      >
-        {children}
-      </AuthContext.Provider>
-    );
-  }
-
-  return (
-    // Login methods and modal look come from the Privy dashboard, not from code.
-    <PrivyProvider appId={PRIVY_APP_ID} clientId={PRIVY_CLIENT_ID}>
-      <PrivyAuthBridge>{children}</PrivyAuthBridge>
-    </PrivyProvider>
-  );
-}
-
-type WalletLike = { type?: string; chainType?: string; address?: string };
-
-function findStellarAddress(linkedAccounts: unknown[] | undefined): string | undefined {
-  const w = (linkedAccounts as WalletLike[] | undefined)?.find((a) => a.type === "wallet" && a.chainType === "stellar");
-  return w?.address;
-}
-
-function PrivyAuthBridge({ children }: { children: ReactNode }) {
-  const { ready, authenticated, user, logout } = usePrivy();
-  const { createWallet } = useCreateWallet();
-  const [createdAddress, setCreatedAddress] = useState<string>();
-  const [creatingWallet, setCreatingWallet] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [address, setAddress] = useState<string>();
   const [authError, setAuthError] = useState<string>();
-  const creating = useRef(false);
 
-  // Privy reports login problems as a code. Show it, so a failure isn't silent.
-  const { login } = useLogin({
-    onComplete: () => setAuthError(undefined),
-    onError: (code) => {
-      console.error("Privy login error:", code);
-      // Closing the login window also reports an error; that's not a problem.
-      if (String(code) !== "exited_auth_flow") setAuthError(String(code));
-    },
-  });
-
-  const linkedAddress = findStellarAddress(user?.linkedAccounts);
-  const stellarAddress = linkedAddress ?? createdAddress;
-
-  // First login: give the user a Stellar wallet (once).
   useEffect(() => {
-    if (!ready || !authenticated || stellarAddress || creating.current) return;
-    creating.current = true;
-    setCreatingWallet(true);
-    createWallet({ chainType: "stellar" })
-      .then(({ wallet }) => setCreatedAddress(wallet.address))
-      .catch((err) => {
-        console.error("Could not create Stellar wallet", err);
-        setAuthError(`Could not create your Stellar wallet${err instanceof Error && err.message ? `: ${err.message}` : ""}`);
-      })
-      .finally(() => {
-        creating.current = false;
-        setCreatingWallet(false);
-      });
-  }, [ready, authenticated, stellarAddress, createWallet]);
+    startKit();
+    let cancelled = false;
 
-  const doLogout = useCallback(async () => {
-    setCreatedAddress(undefined);
-    await logout();
-  }, [logout]);
+    // Pick up a wallet connected on a previous visit.
+    StellarWalletsKit.getAddress()
+      .then(({ address }) => !cancelled && setAddress(address || undefined))
+      .catch(() => {
+        /* nothing remembered */
+      })
+      .finally(() => !cancelled && setReady(true));
+
+    const offState = StellarWalletsKit.on(KitEventType.STATE_UPDATED, (e) => setAddress(e.payload.address || undefined));
+    const offDisconnect = StellarWalletsKit.on(KitEventType.DISCONNECT, () => setAddress(undefined));
+    return () => {
+      cancelled = true;
+      offState();
+      offDisconnect();
+    };
+  }, []);
+
+  const login = useCallback(async () => {
+    try {
+      const { address } = await StellarWalletsKit.authModal();
+      setAddress(address || undefined);
+      setAuthError(undefined);
+      return address || undefined;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("Wallet connect failed:", e);
+      // Closing the window without choosing is not a problem.
+      if (!/clos|cancel|dismiss|exit|abort/i.test(msg)) setAuthError(msg || "Could not connect to your wallet");
+      return undefined;
+    }
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      await StellarWalletsKit.disconnect();
+    } catch (e) {
+      console.error("Wallet disconnect failed:", e);
+    }
+    setAddress(undefined);
+  }, []);
 
   return (
     <AuthContext.Provider
-      value={{
-        ready,
-        authenticated,
-        email: user?.email?.address,
-        stellarAddress,
-        creatingWallet,
-        configured: true,
-        login: () => login(),
-        logout: doLogout,
-      }}
+      value={{ ready, authenticated: !!address, stellarAddress: address, creatingWallet: false, configured: true, login, logout }}
     >
       {children}
       {authError && (
         <div role="alert" className="fixed inset-x-4 bottom-4 z-[60] mx-auto flex max-w-md items-start gap-3 rounded-2xl bg-ink p-4 text-sm text-white">
           <p className="flex-1 break-words">
-            <span className="block font-semibold">Sign-in problem</span>
+            <span className="block font-semibold">Wallet problem</span>
             <span className="mt-0.5 block text-white/80">{authError}</span>
           </p>
           <button onClick={() => setAuthError(undefined)} className="rounded-full border border-white/30 px-3 py-1 text-xs font-semibold">

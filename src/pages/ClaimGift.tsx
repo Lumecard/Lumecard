@@ -26,10 +26,10 @@ const button =
 const short = (a?: string) => (a ? `${a.slice(0, 6)}…${a.slice(-6)}` : "");
 
 function Notice({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-2xl border border-neutral-200/80 bg-white p-5 text-sm text-neutral-600">{children}</div>;
+  return <div className="rounded-2xl border border-neutral-200/80 bg-card p-5 text-sm text-neutral-600">{children}</div>;
 }
 
-/** The sign-in / get-ready / claim steps. Only mounted when Privy is configured. */
+/** The connect / get-ready / claim steps. */
 function ClaimPanel({
   gift,
   asset,
@@ -85,10 +85,11 @@ function ClaimPanel({
     return (
       <>
         <button onClick={() => openConnect()} className={button}>
-          Sign in to claim
+          Connect wallet to claim
         </button>
         <p className="mt-3 text-center text-xs text-neutral-500">
-          New here? Signing in with your email creates a wallet for you.
+          You need a Stellar wallet such as Freighter, xBull or Lobstr, set to the test network. Don't have one yet? Install one and create a
+          wallet, then come back to this page. It doesn't need any money in it.
         </p>
       </>
     );
@@ -102,7 +103,7 @@ function ClaimPanel({
     return (
       <>
         <Notice>
-          <p className="font-semibold text-ink">One quick step first</p>
+          <p className="font-semibold text-fg">One quick step first</p>
           <p className="mt-1">
             The sender included a little XLM to set up your new wallet. It goes straight to you, and you don't need any of your own.
           </p>
@@ -118,7 +119,7 @@ function ClaimPanel({
   if (!funded) {
     return (
       <Notice>
-        <p className="font-semibold text-ink">Your wallet isn't active yet</p>
+        <p className="font-semibold text-fg">Your wallet isn't active yet</p>
         <p className="mt-1">
           A new wallet needs a little XLM to exist on the network and pay the small claim fee. Send some to this address, then come back.
         </p>
@@ -150,7 +151,7 @@ function ClaimPanel({
     return (
       <>
         <Notice>
-          <p className="font-semibold text-ink">One quick step first</p>
+          <p className="font-semibold text-fg">One quick step first</p>
           <p className="mt-1">Your wallet has to opt in to {asset.symbol} before it can hold it. You only do this once.</p>
         </Notice>
         {/* Only this gift's token: each opt-in locks 0.5 XLM, and a new wallet has little to spare. */}
@@ -168,7 +169,7 @@ function ClaimPanel({
   if (spareXlm < 0.01) {
     return (
       <Notice>
-        <p className="font-semibold text-ink">Your wallet needs a little more XLM</p>
+        <p className="font-semibold text-fg">Your wallet needs a little more XLM</p>
         <p className="mt-1">
           Part of your XLM is locked as Stellar's minimum balance, and there isn't enough spare to pay the network fee for the claim. Send a little XLM (about 1) to this address, then come back.
         </p>
@@ -238,7 +239,7 @@ export default function ClaimGift() {
 
   if (!gift || !asset || !theme || !secret || !giftKeyHex) {
     return (
-      <div className="min-h-screen bg-[#fafafb]">
+      <div className="min-h-screen bg-[#0e0d12]">
         <Header />
         <main className="mx-auto max-w-[520px] px-4 pt-16 text-center sm:px-6">
           <h1 className="text-2xl font-semibold tracking-tight">This gift link isn't complete</h1>
@@ -256,7 +257,7 @@ export default function ClaimGift() {
     : null;
 
   return (
-    <div className="min-h-screen bg-[#fafafb]">
+    <div className="min-h-screen bg-[#0e0d12]">
       <Header />
       <main className="mx-auto max-w-[520px] px-4 pb-16 pt-10 sm:px-6">
         {claimedTx ? (
@@ -302,7 +303,7 @@ export default function ClaimGift() {
         ) : (
           <div className="animate-pop">
             <GiftCard asset={asset} theme={theme} amount={gift.amount} showValue />
-            <div className="mt-6 rounded-2xl border border-neutral-200/80 bg-white p-5">
+            <div className="mt-6 rounded-2xl border border-neutral-200/80 bg-card p-5">
               <p className="text-sm text-neutral-500">From {sender}</p>
               {gift.message && <p className="mt-1 break-words text-lg">“{gift.message}”</p>}
               {expiry && (
@@ -315,7 +316,7 @@ export default function ClaimGift() {
             <div className="mt-6">
               {held === false ? (
                 <Notice>
-                  <p className="font-semibold text-ink">This gift is no longer available</p>
+                  <p className="font-semibold text-fg">This gift is no longer available</p>
                   <p className="mt-1">It has already been claimed, or the sender took it back.</p>
                 </Notice>
               ) : configured ? (

@@ -4,7 +4,7 @@ import { useAuth } from "../auth/AuthProvider";
 import { fetchSentGifts, type GiftStatus, type SentGift } from "../chain/sentGifts";
 import { fmtAmount, useBalances } from "../chain/Balances";
 import { friendlyError, takeBackGiftOnChain } from "../chain/gift";
-import { usePrivySigner } from "../chain/privySigner";
+import { useWalletSigner } from "../chain/walletSigner";
 import { AssetIcon } from "./AssetIcon";
 import { getAsset } from "../data/assets";
 import { getSavedLink } from "../lib/savedLinks";
@@ -19,7 +19,7 @@ function Row({ gift, wallet, onChanged }: { gift: SentGift; wallet: string; onCh
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
-  const signer = usePrivySigner();
+  const signer = useWalletSigner();
   const { refresh } = useBalances();
   const asset = getAsset(gift.tokenId);
   if (!asset) return null;
@@ -111,7 +111,7 @@ export function SentGifts({ empty }: { empty: ReactNode }) {
 
   if (!gifts) {
     return error ? (
-      <p className="rounded-2xl border border-neutral-200/80 bg-white p-5 text-sm text-neutral-500">Couldn't load your gifts. Retrying…</p>
+      <p className="rounded-2xl bg-card p-5 text-sm text-neutral-500">Couldn't load your gifts. Retrying…</p>
     ) : (
       <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
     );
@@ -119,7 +119,7 @@ export function SentGifts({ empty }: { empty: ReactNode }) {
   if (gifts.length === 0) return <>{empty}</>;
 
   return (
-    <div className="divide-y divide-neutral-100 overflow-hidden rounded-2xl border border-neutral-200/80 bg-white">
+    <div className="divide-y divide-neutral-100 overflow-hidden rounded-2xl bg-card">
       {gifts.map((g) => (
         <Row key={g.giftKeyHex} gift={g} wallet={stellarAddress!} onChanged={() => setReloadKey((k) => k + 1)} />
       ))}

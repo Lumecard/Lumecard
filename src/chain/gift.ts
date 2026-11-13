@@ -18,7 +18,7 @@ import {
 /**
  * Creating and claiming gifts on the Lumecard contract (Stellar testnet).
  * Self-contained: the signing step is passed in, so the same code runs with a
- * Privy wallet in the app and with a plain keypair in tests.
+ * wallet in the app and with a plain keypair in tests.
  * Values must match lumecard/deployments/testnet.json.
  */
 export const SOROBAN_RPC_URL = "https://soroban-testnet.stellar.org";
@@ -41,8 +41,16 @@ export const FEE_BPS = 150;
 /** Stellar tokens have 7 decimal places. */
 const DECIMALS = 7;
 
-/** Signs a 32-byte transaction hash and returns the 64-byte Ed25519 signature. */
-export type SignHash = (hash: Uint8Array) => Promise<Uint8Array>;
+/**
+ * Has the user's wallet sign a transaction. Takes the transaction as base64 XDR and returns the
+ * signed transaction as base64 XDR. In the app this is the wallet kit; in tests it can be a keypair.
+ */
+export type SignTx = (txXdr: string) => Promise<string>;
+
+/** Hands a built transaction to the wallet and returns it signed, ready to submit. */
+async function signWithWallet(tx: { toXDR(): string }, sign: SignTx) {
+  return TransactionBuilder.fromXDR(await sign(tx.toXDR()), Networks.TESTNET);
+}
 
 export interface CreatedGift {
   /** True if the sender put XLM in a purse so a brand-new recipient can set up their wallet. */
@@ -82,12 +90,6 @@ export const isGiftTooSmall = (tokenId: string, amount: number): boolean => amou
 
 const toHex = (b: Uint8Array) => Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
 
-const toBase64 = (b: Uint8Array) => {
-  let bin = "";
-  b.forEach((x) => (bin += String.fromCharCode(x)));
-  return btoa(bin);
-};
-
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Turns raw network errors into something a person can act on. */
@@ -104,6 +106,8 @@ export function friendlyError(e: unknown): string {
     return "The network rejected the transaction.";
   }
   const msg = e instanceof Error ? e.message : String(e);
+  // The person closed or refused the request in their wallet.
+  if (/declin|reject|denied|cancel|refus|user closed|closed the/i.test(msg)) return "You cancelled the request in your wallet.";
   // Why the network refused to even accept a transaction (see signAndSend).
   if (/txInsufficientBalance/.test(msg)) return "Your wallet doesn't have enough spare XLM to pay the network fee. Part of your XLM is locked as Stellar's minimum balance.";
   if (/txInsufficientFee/.test(msg)) return "The network is busy and needs a higher fee. Please try again in a moment.";
@@ -120,15 +124,10 @@ export function friendlyError(e: unknown): string {
 }
 
 /** Signs with the wallet, submits, and waits for the network to confirm. Returns the tx hash. */
-async function signAndSend(
-  server: rpc.Server,
-  built: ReturnType<TransactionBuilder["build"]>,
-  signer: string,
-  sign: SignHash,
-): Promise<string> {
+async function signAndSend(server: rpc.Server, built: ReturnType<TransactionBuilder["build"]>, sign: SignTx): Promise<string> {
   // Asks the network to work out fees and resources; throws a readable error if the call would fail.
-  const tx = await server.prepareTransaction(built);
-  tx.addSignature(signer, toBase64(await sign(tx.hash())));
+  const prepared = await server.prepareTransaction(built);
+  const tx = await signWithWallet(prepared, sign);
 
   const sent = await server.sendTransaction(tx);
   if (sent.status === "ERROR") {
@@ -169,7 +168,7 @@ export async function createGiftOnChain(opts: {
   withSetup?: boolean;
   /** Use this gift key (an "S..." secret) instead of making a new one. */
   giftSecret?: string;
-  sign: SignHash;
+  sign: SignTx;
 }): Promise<CreatedGift> {
   const tokenContract = TOKEN_CONTRACTS[opts.tokenId];
   if (!tokenContract) throw new Error(`Unsupported token: ${opts.tokenId}`);
@@ -194,7 +193,7 @@ export async function createGiftOnChain(opts: {
     .setTimeout(120)
     .build();
 
-  const txHash = await signAndSend(server, built, opts.sender, opts.sign);
+  const txHash = await signAndSend(server, built, opts.sign);
   return {
     secret: giftKeypair.secret(),
     giftKeyHex: toHex(giftKeypair.rawPublicKey()),
@@ -223,7 +222,7 @@ export const giftKeyHexFromSecret = (secret: string) => toHex(Keypair.fromSecret
  * "pay this recipient"; the recipient's wallet then submits the transaction and pays the
  * small network fee. The recipient's account must already exist and hold some XLM.
  */
-export async function claimGiftOnChain(opts: { recipient: string; secret: string; sign: SignHash }): Promise<{ txHash: string }> {
+export async function claimGiftOnChain(opts: { recipient: string; secret: string; sign: SignTx }): Promise<{ txHash: string }> {
   const server = new rpc.Server(SOROBAN_RPC_URL);
   const giftKeypair = Keypair.fromSecret(opts.secret);
   const giftKey = giftKeypair.rawPublicKey();
@@ -247,7 +246,7 @@ export async function claimGiftOnChain(opts: { recipient: string; secret: string
     .setTimeout(120)
     .build();
 
-  return { txHash: await signAndSend(server, built, opts.recipient, opts.sign) };
+  return { txHash: await signAndSend(server, built, opts.sign) };
 }
 
 /* ------------------------------------------------------------------------------------------
@@ -289,7 +288,7 @@ export const newGiftSecret = (): string => Keypair.random().secret();
  * close it and take the XLM back if the gift is never claimed. One transaction, signed by the
  * sender's wallet and by the gift key.
  */
-export async function fundPurseOnChain(opts: { sender: string; giftSecret: string; sign: SignHash }): Promise<void> {
+export async function fundPurseOnChain(opts: { sender: string; giftSecret: string; sign: SignTx }): Promise<void> {
   const h = horizon();
   const purse = Keypair.fromSecret(opts.giftSecret);
   const tx = new TransactionBuilder(await h.loadAccount(opts.sender), { fee: BASE_FEE, networkPassphrase: Networks.TESTNET })
@@ -297,9 +296,10 @@ export async function fundPurseOnChain(opts: { sender: string; giftSecret: strin
     .addOperation(Operation.setOptions({ source: purse.publicKey(), signer: { ed25519PublicKey: opts.sender, weight: 1 } }))
     .setTimeout(120)
     .build();
-  tx.sign(purse);
-  tx.addSignature(opts.sender, toBase64(await opts.sign(tx.hash())));
-  await h.submitTransaction(tx);
+  // The wallet signs first; then the purse's own key signs for the operation that changes the purse.
+  const signed = await signWithWallet(tx, opts.sign);
+  signed.sign(purse);
+  await h.submitTransaction(signed);
 }
 
 /**
@@ -327,7 +327,7 @@ export async function activateWalletFromPurse(opts: { giftSecret: string; recipi
 }
 
 /** Sender takes the XLM back out of an unused purse. Returns false if there is no purse. */
-export async function recoverPurseOnChain(opts: { sender: string; giftKeyHex: string; sign: SignHash }): Promise<boolean> {
+export async function recoverPurseOnChain(opts: { sender: string; giftKeyHex: string; sign: SignTx }): Promise<boolean> {
   const h = horizon();
   const purseAddress = purseAddressFor(opts.giftKeyHex);
   if ((await getPurseBalance(opts.giftKeyHex)) === null) return false;
@@ -335,13 +335,12 @@ export async function recoverPurseOnChain(opts: { sender: string; giftKeyHex: st
     .addOperation(Operation.accountMerge({ source: purseAddress, destination: opts.sender }))
     .setTimeout(120)
     .build();
-  tx.addSignature(opts.sender, toBase64(await opts.sign(tx.hash())));
-  await h.submitTransaction(tx);
+  await h.submitTransaction(await signWithWallet(tx, opts.sign));
   return true;
 }
 
 /** Sender takes an expired, unclaimed gift back (and the purse's XLM, if there is one). */
-export async function takeBackGiftOnChain(opts: { sender: string; giftKeyHex: string; sign: SignHash }): Promise<void> {
+export async function takeBackGiftOnChain(opts: { sender: string; giftKeyHex: string; sign: SignTx }): Promise<void> {
   const server = new rpc.Server(SOROBAN_RPC_URL);
   const account = await server.getAccount(opts.sender);
   const call = new Contract(GIFT_CONTRACT).call("refund", xdr.ScVal.scvBytes(asArg(fromHex(opts.giftKeyHex))));
@@ -349,7 +348,7 @@ export async function takeBackGiftOnChain(opts: { sender: string; giftKeyHex: st
     .addOperation(call)
     .setTimeout(120)
     .build();
-  await signAndSend(server, built, opts.sender, opts.sign);
+  await signAndSend(server, built, opts.sign);
   await recoverPurseOnChain(opts);
 }
 
@@ -363,7 +362,7 @@ export async function createGiftWithPurse(opts: {
   amount: number;
   expiresAt: number;
   withPurse: boolean;
-  sign: SignHash;
+  sign: SignTx;
 }): Promise<CreatedGift> {
   const giftSecret = newGiftSecret();
   const giftKeyHex = giftKeyHexFromSecret(giftSecret);

@@ -2,15 +2,27 @@
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --color-brand-50: #fff4ed;
-  --color-brand-100: #ffe6d5;
-  --color-brand-200: #fec8a8;
+  --color-brand-50: #2a1a10;
+  --color-brand-100: #3d2314;
+  --color-brand-200: #6b3515;
   --color-brand-300: #fda070;
   --color-brand-500: #f56a1f;
   --color-brand-600: #e4560c;
   --color-brand-700: #bd420a;
-  --color-ink: #111113;
-  --color-surface: #f4f4f6;
+  --color-ink: #2a2831;
+  --color-fg: #f4f4f5;
+  --color-card: #17161c;
+  --color-surface: #1d1c23;
+  --color-neutral-50: #1a191f;
+  --color-neutral-100: #1f1e25;
+  --color-neutral-200: #2b2a33;
+  --color-neutral-300: #3b3a44;
+  --color-neutral-400: #8b8a94;
+  --color-neutral-500: #a3a2ac;
+  --color-neutral-600: #bcbbc4;
+  --color-neutral-700: #d0cfd6;
+  --color-neutral-800: #e4e3e8;
+  --color-neutral-900: #f4f4f5;
 }
 
 html,
@@ -20,7 +32,8 @@ body,
 }
 
 body {
-  @apply bg-white text-ink font-sans antialiased;
+  @apply bg-[#0e0d12] text-fg font-sans antialiased;
+  color-scheme: dark;
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -55,4 +68,55 @@ body {
 }
 .animate-pop {
   animation: pop 0.35s ease-out;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-slide-in {
+  animation: slide-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.animate-fade-in {
+  animation: fade-in 0.28s ease-out;
+}
+
+.dot-grid {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1px);
+  background-size: 18px 18px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 100% at 50% 0%, #000 0%, transparent 100%);
+  mask-image: radial-gradient(ellipse 70% 100% at 50% 0%, #000 0%, transparent 100%);
+}
+
+/* Scrollbars in the app theme */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2b2a33 transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #0e0d12;
+}
+::-webkit-scrollbar-thumb {
+  background: #2b2a33;
+  border-radius: 999px;
+  border: 2px solid #0e0d12;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3b3a44;
 }
