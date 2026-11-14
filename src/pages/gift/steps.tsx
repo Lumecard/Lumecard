@@ -11,6 +11,7 @@ import { saveLink } from "../../lib/savedLinks";
 import { PURSE_XLM, XLM_BUFFER, feeFor, isGiftTooSmall, minGiftTokens, type CreatedGift } from "../../chain/gift";
 import { useCreateGift } from "../../chain/useCreateGift";
 import { fmtAmount, fmtUsd, useBalances } from "../../chain/Balances";
+import { explorerTx } from "../../config/network";
 
 export interface GiftDraft {
   assetId?: string;
@@ -274,6 +275,7 @@ export function Preview({
   onContinue: () => void;
 }) {
   const [revealed, setRevealed] = useState(false);
+  const [opening, setOpening] = useState(false);
   const { email } = useAuth();
   const theme = CARD_THEMES.find((t) => t.id === draft.themeId)!;
   const emailValid = /^\S+@\S+\.\S+$/.test(draft.recipientEmail);
@@ -282,12 +284,16 @@ export function Preview({
     <div>
       <div className="relative">
         {revealed ? (
-          <GiftCard asset={asset} theme={theme} amount={draft.amount} showValue className="animate-pop" />
+          <GiftCard asset={asset} theme={theme} amount={draft.amount} showValue reveal />
         ) : (
           <>
-            <WrappedCard />
+            <WrappedCard opening={opening} />
             <button
-              onClick={() => setRevealed(true)}
+              disabled={opening}
+              onClick={() => {
+                setOpening(true);
+                setTimeout(() => setRevealed(true), 650);
+              }}
               className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),inset_0_-2px_0_rgba(0,0,0,0.4)]"
             >
               Preview Gift
@@ -545,7 +551,7 @@ export function Done({
         Your ${draft.amount} of {asset.symbol} is locked in the gift contract. Share the link below with the person you're sending it to.
       </p>
       <a
-        href={`https://stellar.expert/explorer/testnet/tx/${gift.txHash}`}
+        href={explorerTx(gift.txHash)}
         target="_blank"
         rel="noreferrer"
         className="mt-1 inline-block text-xs text-neutral-500 underline"

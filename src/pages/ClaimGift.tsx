@@ -12,6 +12,7 @@ import { useEnableTokens } from "../chain/useEnableTokens";
 import { useClaimGift } from "../chain/useClaimGift";
 import { activateWalletFromPurse, friendlyError, getPurseBalance, giftKeyHexFromSecret, isGiftHeld } from "../chain/gift";
 import { parseGiftFragment, parseGiftSecret, type GiftDetails } from "../lib/giftLink";
+import { NETWORK, explorerTx } from "../config/network";
 
 /**
  * Recipient page a gift link opens: /g/:id#<secret>.<details>
@@ -132,14 +133,14 @@ function ClaimPanel({
           >
             {short(stellarAddress)} {copied ? <Check className="h-3.5 w-3.5 text-brand-600" /> : <Copy className="h-3.5 w-3.5" />}
           </button>
-          <a
-            href={`https://friendbot.stellar.org/?addr=${stellarAddress}`}
+          {NETWORK.friendbotUrl && <a
+            href={`${NETWORK.friendbotUrl}/?addr=${stellarAddress}`}
             target="_blank"
             rel="noreferrer"
             className="inline-flex h-9 items-center gap-1.5 rounded-full border border-neutral-200 px-3 text-xs font-semibold"
           >
             Get free test XLM <ExternalLink className="h-3.5 w-3.5" />
-          </a>
+          </a>}
         </div>
       </Notice>
     );
@@ -209,6 +210,7 @@ export default function ClaimGift() {
   const { hash } = useLocation();
   const { configured } = useAuth();
   const [stage, setStage] = useState<"wrapped" | "opened">("wrapped");
+  const [opening, setOpening] = useState(false);
   const [claimedTx, setClaimedTx] = useState<string>();
   const [held, setHeld] = useState<boolean>();
 
@@ -270,7 +272,7 @@ export default function ClaimGift() {
               ${gift.amount} of {asset.symbol} is now in your wallet.
             </p>
             <a
-              href={`https://stellar.expert/explorer/testnet/tx/${claimedTx}`}
+              href={explorerTx(claimedTx)}
               target="_blank"
               rel="noreferrer"
               className="mt-1 inline-block text-xs text-neutral-500 underline"
@@ -294,15 +296,22 @@ export default function ClaimGift() {
             <p className="text-sm font-medium uppercase tracking-wider text-neutral-400">You've received a gift</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight">{sender} sent you something</h1>
             <div className="relative mt-8">
-              <WrappedCard />
+              <WrappedCard opening={opening} />
             </div>
-            <button onClick={() => setStage("opened")} className={`${button} mt-8`}>
+            <button
+              disabled={opening}
+              onClick={() => {
+                setOpening(true);
+                setTimeout(() => setStage("opened"), 650);
+              }}
+              className={`${button} mt-8`}
+            >
               Open gift
             </button>
           </div>
         ) : (
-          <div className="animate-pop">
-            <GiftCard asset={asset} theme={theme} amount={gift.amount} showValue />
+          <div>
+            <GiftCard asset={asset} theme={theme} amount={gift.amount} showValue reveal />
             <div className="mt-6 rounded-2xl border border-neutral-200/80 bg-card p-5">
               <p className="text-sm text-neutral-500">From {sender}</p>
               {gift.message && <p className="mt-1 break-words text-lg">“{gift.message}”</p>}

@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit/sdk";
-import { Networks } from "@creit.tech/stellar-wallets-kit/types";
+import { NETWORK } from "../config/network";
 import { useAuth } from "../auth/AuthProvider";
 import type { SignTx } from "./gift";
 
@@ -13,7 +13,7 @@ export function useWalletSigner(): SignTx | null {
   const sign = useCallback<SignTx>(
     async (txXdr) => {
       const { signedTxXdr } = await StellarWalletsKit.signTransaction(txXdr, {
-        networkPassphrase: Networks.TESTNET,
+        networkPassphrase: NETWORK.passphrase,
         address: stellarAddress,
       });
       return signedTxXdr;

@@ -1,17 +1,19 @@
-import { ArrowDownLeft, ArrowUpRight, ChevronRight, Eye, EyeOff, Gift, Inbox } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ChevronRight, Eye, EyeOff, Gift, Inbox, Layers } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Header } from "../components/Header";
+import { AppShell } from "../components/AppShell";
 import { AssetIcon } from "../components/AssetIcon";
 import { useDeposit } from "../components/DepositModal";
 import { useConnectWallet } from "../components/ConnectWallet";
 import { useAuth } from "../auth/AuthProvider";
 import { TestnetFunding } from "../components/TestnetFunding";
+import { IS_TESTNET } from "../config/network";
 import { useWithdraw } from "../components/WithdrawModal";
 import { ASSETS, fmtPrice } from "../data/assets";
 import { fmtAmount, fmtUsd, useBalances, useHideBalance } from "../chain/Balances";
 
 const ACTIONS = [
   { id: "gift", label: "Send gift", icon: Gift, to: "/app/gifts/create" },
+  { id: "mix", label: "Mix", icon: Layers, to: "/mix" },
   { id: "deposit", label: "Deposit", icon: ArrowDownLeft },
   { id: "withdraw", label: "Withdraw", icon: ArrowUpRight },
 ];
@@ -50,8 +52,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0e0d12]">
-      <Header />
+    <AppShell>
       <main className="flex flex-col md:min-h-[calc(100vh-48px)] md:flex-row">
         {/* Right side: balance card, separated from the main side by a line */}
         <aside className="hidden p-4 md:order-2 xl:p-6 md:block md:w-[290px] md:shrink-0 lg:w-[330px] xl:w-[392px] md:border-l md:border-white/[0.06]">
@@ -82,7 +83,7 @@ export default function Dashboard() {
                   return (
                     <button
                       key={id}
-                      onClick={() => gate(() => (to ? navigate(to) : id === "deposit" ? openDeposit() : openWithdraw()))}
+                      onClick={() => (id === "mix" && to ? navigate(to) : gate(() => (to ? navigate(to) : id === "deposit" ? openDeposit() : openWithdraw())))}
                       className="flex flex-col items-center gap-2"
                     >
                       <span className={`grid h-9 w-9 place-items-center rounded-xl xl:h-10 xl:w-10 ${primary ? "bg-card text-brand-700" : "bg-white/10 text-white ring-1 ring-white/15"}`}>
@@ -95,7 +96,7 @@ export default function Dashboard() {
               </div>
             </div>
           </section>
-          {authenticated && (
+          {authenticated && IS_TESTNET && (
             <div className="mt-4 [&>*]:mt-0">
               <TestnetFunding />
             </div>
@@ -105,9 +106,14 @@ export default function Dashboard() {
         {/* Main side */}
         <div className="relative order-2 min-w-0 flex-1 px-4 pb-16 pt-8 sm:px-6 md:order-1">
         <div aria-hidden className="dot-grid pointer-events-none absolute inset-x-0 top-0 h-[420px]" /><div className="relative mx-auto w-full max-w-[760px]">
-          <button onClick={() => gate(() => navigate("/app/gifts/create"))} className="mb-6 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-brand-600 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-2px_0_rgba(0,0,0,0.25)] md:hidden">
-            <Gift className="h-4 w-4" /> Send a gift
-          </button>
+          <div className="mb-6 grid grid-cols-2 gap-3 md:hidden">
+            <button onClick={() => gate(() => navigate("/app/gifts/create"))} className="flex h-11 items-center justify-center gap-2 rounded-full bg-brand-600 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-2px_0_rgba(0,0,0,0.25)]">
+              <Gift className="h-4 w-4" /> Send a gift
+            </button>
+            <button onClick={() => navigate("/mix")} className="flex h-11 items-center justify-center gap-2 rounded-full bg-white/[0.06] text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_-2px_0_rgba(0,0,0,0.35)]">
+              <Layers className="h-4 w-4" /> Mix
+            </button>
+          </div>
 
         {/* Tokens */}
         <section className="mt-10">
@@ -186,6 +192,6 @@ export default function Dashboard() {
         </div>
         </div>
       </main>
-    </div>
+    </AppShell>
   );
 }

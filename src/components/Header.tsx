@@ -8,6 +8,7 @@ import { useWithdraw } from "./WithdrawModal";
 import { useConnectWallet } from "./ConnectWallet";
 import { useAuth } from "../auth/AuthProvider";
 import { fmtAmount, fmtUsd, useBalances, useHideBalance } from "../chain/Balances";
+import { IS_TESTNET } from "../config/network";
 
 const shortAddr = (a?: string) => (a ? `${a.slice(0, 4)}…${a.slice(-4)}` : "No wallet");
 const TOKENS = [
@@ -151,7 +152,7 @@ export function Header({ landing }: { signedIn?: boolean; landing?: boolean }) {
   const signedIn = authenticated;
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const showBack = signedIn && pathname.startsWith("/app/token");
+  const showBack = pathname.startsWith("/app/token") || pathname.startsWith("/mix/");
   return (
     <>
     <header className="sticky top-0 z-40 border-b border-neutral-200/70 bg-[#0e0d12]/80 backdrop-blur-md">
@@ -160,6 +161,7 @@ export function Header({ landing }: { signedIn?: boolean; landing?: boolean }) {
           <Link to="/">
             <Logo />
           </Link>
+          {IS_TESTNET && <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-500">Testnet</span>}
           {showBack && (
             <button onClick={() => navigate("/")} aria-label="Back" className="grid h-8 w-8 place-items-center rounded-full text-white">
               <ArrowLeft className="h-5 w-5" />

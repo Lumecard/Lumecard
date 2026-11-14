@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit/sdk";
 import { defaultModules } from "@creit.tech/stellar-wallets-kit/modules/utils";
 import { errorText } from "../chain/gift";
+import { NETWORK } from "../config/network";
 import { KitEventType, Networks } from "@creit.tech/stellar-wallets-kit/types";
 
 /**
@@ -49,7 +50,7 @@ function startKit(): Promise<void> {
       modules.push(
         new WalletConnectModule({
           projectId: WALLETCONNECT_ID,
-          allowedChains: [WalletConnectTargetChain.TESTNET],
+          allowedChains: [NETWORK.isTestnet ? WalletConnectTargetChain.TESTNET : WalletConnectTargetChain.PUBLIC],
           metadata: {
             name: "Lumecard",
             description: "Send crypto as a gift card",
@@ -59,7 +60,7 @@ function startKit(): Promise<void> {
         }),
       );
     }
-    StellarWalletsKit.init({ modules, network: Networks.TESTNET });
+    StellarWalletsKit.init({ modules, network: NETWORK.isTestnet ? Networks.TESTNET : Networks.PUBLIC });
   })();
   return kitStarted;
 }

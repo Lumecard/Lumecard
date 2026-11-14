@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowDownLeft, ExternalLink, Gift, TrendingUp } from "lucide-react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
-import { Header } from "../components/Header";
+import { AppShell } from "../components/AppShell";
 import { fmtAmount, fmtUsd, useBalances } from "../chain/Balances";
 import { AssetIcon } from "../components/AssetIcon";
 import { useDeposit } from "../components/DepositModal";
@@ -101,8 +101,7 @@ export default function TokenPage() {
   const held = balances.amounts[asset.id] ?? 0;
 
   return (
-    <div className="min-h-screen bg-[#0e0d12]">
-      <Header signedIn />
+    <AppShell>
       <main className="mx-auto max-w-[1080px] px-4 pb-16 pt-6 sm:px-6">
 
         <section className="rounded-3xl bg-card p-6 sm:p-8">
@@ -185,6 +184,6 @@ export default function TokenPage() {
           <p className="mt-2 text-center text-xs text-neutral-400">Prices from CoinGecko.</p>
         </section>
       </main>
-    </div>
+    </AppShell>
   );
 }

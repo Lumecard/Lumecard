@@ -3,17 +3,15 @@ import { useAuth } from "../auth/AuthProvider";
 import { ASSETS, getAsset } from "../data/assets";
 
 /**
- * Real wallet balances, read from Stellar testnet (Horizon).
+ * Real wallet balances, read from the Stellar network (Horizon).
  * Prices used for the dollar totals are still the placeholders in data/assets.ts.
  */
 import { HORIZON_URL } from "./gift";
+import { NETWORK } from "../config/network";
 export { HORIZON_URL };
 
-// Testnet issuers (from Circle's docs). Must match lumecard/deployments/testnet.json.
-const ISSUERS: Record<string, string> = {
-  usdc: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
-  eurc: "GB3Q6QDZYTHWT7E5PVS3W7FUT5GVAFC5KSZFFLPU25GO7VTC3NM2ZTVO",
-};
+// Token issuers come from config/network.ts.
+const ISSUERS: Record<string, string> = NETWORK.tokenIssuers;
 
 interface HorizonBalance {
   asset_type: string;

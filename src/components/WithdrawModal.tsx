@@ -5,6 +5,7 @@ import { fmtAmount, useBalances } from "../chain/Balances";
 import { useWalletSigner } from "../chain/walletSigner";
 import { isStellarAddress, sendPaymentOnChain } from "../chain/transfer";
 import { ASSETS, getAsset } from "../data/assets";
+import { explorerTx } from "../config/network";
 
 const WithdrawContext = createContext<{ openWithdraw: () => void }>({ openWithdraw: () => {} });
 export const useWithdraw = () => useContext(WithdrawContext);
@@ -183,7 +184,7 @@ function WithdrawModal({ onClose }: { onClose: () => void }) {
               {fmtAmount(amount)} {asset.symbol} is on its way to <span className="font-mono">{short(dest.trim())}</span>.
             </p>
             <a
-              href={`https://stellar.expert/explorer/testnet/tx/${txHash}`}
+              href={explorerTx(txHash ?? "")}
               target="_blank"
               rel="noreferrer"
               className="mt-1 inline-block text-xs text-neutral-500 underline"

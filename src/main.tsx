@@ -1,45 +1,32 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import "./index.css";
-import Landing from "./pages/Landing";
-import Guide from "./pages/Guide";
-import Dashboard from "./pages/Dashboard";
-import CreateGift from "./pages/gift/CreateGift";
-import TokenPage from "./pages/TokenPage";
-import ClaimGift from "./pages/ClaimGift";
-import { DepositProvider } from "./components/DepositModal";
-import { WithdrawProvider } from "./components/WithdrawModal";
-import { ConnectWalletProvider } from "./components/ConnectWallet";
-import { AuthProvider } from "./auth/AuthProvider";
-import { RequireAuth } from "./auth/RequireAuth";
-import { BalanceProvider } from "./chain/Balances";
+import { CONFIG_ERRORS } from "./config/network";
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <AuthProvider>
-       <BalanceProvider>
-        <DepositProvider>
-         <WithdrawProvider>
-          <ConnectWalletProvider>
-            <Routes>
-              {/* The dashboard is the first screen. The landing page lives at /welcome. */}
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/welcome" element={<Landing />} />
-              <Route path="/guide" element={<Guide />} />
-              <Route path="/app" element={<Navigate to="/" replace />} />
-              <Route path="/app/token/:id" element={<TokenPage />} />
-              <Route path="/app/gifts/create" element={<RequireAuth><CreateGift /></RequireAuth>} />
-              {/* Claim page stays public: recipients sign in from there */}
-              <Route path="/g/:id" element={<ClaimGift />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </ConnectWalletProvider>
-         </WithdrawProvider>
-        </DepositProvider>
-       </BalanceProvider>
-      </AuthProvider>
-    </BrowserRouter>
-  </React.StrictMode>
-);
+function ConfigProblem() {
+  return (
+    <div className="grid min-h-screen place-items-center bg-[#0e0d12] px-4 text-white">
+      <div className="w-full max-w-lg rounded-3xl bg-[#17161c] p-6">
+        <h1 className="text-xl font-semibold">Lumecard is not set up</h1>
+        <p className="mt-2 text-sm text-neutral-400">These settings are missing or wrong. Fix them in the environment variables and redeploy. See .env.example.</p>
+        <ul className="mt-4 space-y-1.5 font-mono text-xs text-orange-400">
+          {CONFIG_ERRORS.map((e) => (
+            <li key={e}>{e}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// The app is loaded only after the settings pass, so a missing address shows the message above
+// instead of a blank page.
+if (CONFIG_ERRORS.length > 0) {
+  ReactDOM.createRoot(document.getElementById("root")!).render(
+    <React.StrictMode>
+      <ConfigProblem />
+    </React.StrictMode>,
+  );
+} else {
+  import("./app");
+}

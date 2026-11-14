@@ -5,6 +5,7 @@ import { useAuth } from "../auth/AuthProvider";
 import { useConnectWallet } from "../components/ConnectWallet";
 import { AssetIcon } from "../components/AssetIcon";
 import { LogoMark } from "../components/Logo";
+import { NETWORK } from "../config/network";
 import { getAsset, type Asset } from "../data/assets";
 
 const PRIMARY_BTN =
@@ -145,7 +146,9 @@ const FAQ = [
   },
   {
     q: "Is this live with real money?",
-    a: "Not yet. Lumecard currently runs on the Stellar test network, so the tokens have no real value. Use it to try everything safely.",
+    a: NETWORK.isTestnet
+      ? "Not yet. Lumecard currently runs on the Stellar test network, so the tokens have no real value. Use it to try everything safely."
+      : "Yes. This runs on the live Stellar network, so the tokens have real value. Start with a small amount.",
   },
   {
     q: "Which wallets work?",
@@ -171,7 +174,7 @@ export default function Landing() {
         <div className="relative mx-auto max-w-[1140px] px-4 pb-8 pt-16 text-center sm:px-6 md:pt-24">
           <a href="#features" className="inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-neutral-700">
             <span className="rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">New</span>
-            Live on the Stellar test network
+            Live on the {NETWORK.label}
             <ArrowRight className="h-3.5 w-3.5" />
           </a>
           <h1 className="mx-auto mt-6 max-w-4xl text-5xl font-medium leading-[1.05] tracking-tight sm:text-7xl">
@@ -338,7 +341,7 @@ export default function Landing() {
           <div aria-hidden className="dot-grid pointer-events-none absolute inset-0 opacity-60" />
           <div className="relative">
             <h2 className="mx-auto max-w-xl text-balance text-3xl font-medium tracking-tight sm:text-5xl">Your crypto, with a front desk.</h2>
-            <p className="mx-auto mt-4 max-w-md text-white/70">Connect a wallet and try it on the test network in a minute.</p>
+            <p className="mx-auto mt-4 max-w-md text-white/70">Connect a wallet and try it {NETWORK.isTestnet ? "on the test network " : ""}in a minute.</p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <button onClick={start} className={`${PRIMARY_BTN} w-full sm:w-auto`}>
                 Open the app

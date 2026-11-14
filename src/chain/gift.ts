@@ -5,7 +5,6 @@ import {
   Contract,
   Horizon,
   Keypair,
-  Networks,
   Operation,
   StrKey,
   TransactionBuilder,
@@ -14,28 +13,22 @@ import {
   scValToNative,
   xdr,
 } from "@stellar/stellar-sdk";
+import { NETWORK } from "../config/network";
 
 /**
  * Creating and claiming gifts on the Lumecard contract (Stellar testnet).
  * Self-contained: the signing step is passed in, so the same code runs with a
  * wallet in the app and with a plain keypair in tests.
- * Values must match lumecard/deployments/testnet.json.
+ * Network values come from config/network.ts (environment variables).
  */
-export const SOROBAN_RPC_URL = "https://soroban-testnet.stellar.org";
-export const HORIZON_URL = "https://horizon-testnet.stellar.org";
-export const GIFT_CONTRACT = "CAWLQGYB74K7RE7ILXR7CODLC57NEH6H3XREPBRFKJBW562ONCE2643T";
-export const TOKEN_CONTRACTS: Record<string, string> = {
-  xlm: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
-  usdc: "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
-  eurc: "CCUUDM434BMZMYWYDITHFXHDMIVTGGD6T2I5UKNX5BSLXLW7HVR4MCGZ",
-};
-/** Issuers of the non-native tokens (Circle, testnet). XLM has none. */
-export const TOKEN_ISSUERS: Record<string, string> = {
-  usdc: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
-  eurc: "GB3Q6QDZYTHWT7E5PVS3W7FUT5GVAFC5KSZFFLPU25GO7VTC3NM2ZTVO",
-};
+export const SOROBAN_RPC_URL = NETWORK.sorobanRpcUrl;
+export const HORIZON_URL = NETWORK.horizonUrl;
+export const GIFT_CONTRACT = NETWORK.giftContract;
+export const TOKEN_CONTRACTS: Record<string, string> = NETWORK.tokenContracts;
+/** Issuers of the non-native tokens (Circle). XLM has none. */
+export const TOKEN_ISSUERS: Record<string, string> = NETWORK.tokenIssuers;
 /** A public, funded account (the contract admin) used only as the source of read-only calls. */
-export const READ_ACCOUNT = "GBVATCX6JPNL5CCDUWMDTIW74LAH72WAR25G5W762H2TLRSYXB4BTPV5";
+export const READ_ACCOUNT = NETWORK.feeAddress;
 /** Fee the sender pays on top of the gift, in basis points (150 = 1.5%). Mirrors the contract. */
 export const FEE_BPS = 150;
 /** Stellar tokens have 7 decimal places. */
@@ -49,7 +42,7 @@ export type SignTx = (txXdr: string) => Promise<string>;
 
 /** Hands a built transaction to the wallet and returns it signed, ready to submit. */
 async function signWithWallet(tx: { toXDR(): string }, sign: SignTx) {
-  return TransactionBuilder.fromXDR(await sign(tx.toXDR()), Networks.TESTNET);
+  return TransactionBuilder.fromXDR(await sign(tx.toXDR()), NETWORK.passphrase);
 }
 
 export interface CreatedGift {
@@ -210,7 +203,7 @@ export async function createGiftOnChain(opts: {
     nativeToScVal(BigInt(opts.expiresAt), { type: "u64" }),
     nativeToScVal(opts.withSetup === true, { type: "bool" }),
   );
-  const built = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: Networks.TESTNET })
+  const built = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: NETWORK.passphrase })
     .addOperation(call)
     .setTimeout(120)
     .build();
@@ -227,7 +220,7 @@ export async function createGiftOnChain(opts: {
 /** True if the contract still holds this gift (not claimed or returned yet). Read-only, free. */
 export async function isGiftHeld(giftKeyHex: string, server = new rpc.Server(SOROBAN_RPC_URL)): Promise<boolean> {
   const bytes = Uint8Array.from(giftKeyHex.match(/.{2}/g)!, (h) => parseInt(h, 16));
-  const tx = new TransactionBuilder(new Account(READ_ACCOUNT, "0"), { fee: BASE_FEE, networkPassphrase: Networks.TESTNET })
+  const tx = new TransactionBuilder(new Account(READ_ACCOUNT, "0"), { fee: BASE_FEE, networkPassphrase: NETWORK.passphrase })
     .addOperation(new Contract(GIFT_CONTRACT).call("get_gift", nativeToScVal(bytes)))
     .setTimeout(30)
     .build();
@@ -252,7 +245,7 @@ export async function claimGiftOnChain(opts: { recipient: string; secret: string
   const recipientScVal = new Address(opts.recipient).toScVal();
 
   // The contract tells us the exact bytes to sign, so the format can't drift from the contract.
-  const payloadTx = new TransactionBuilder(new Account(opts.recipient, "0"), { fee: BASE_FEE, networkPassphrase: Networks.TESTNET })
+  const payloadTx = new TransactionBuilder(new Account(opts.recipient, "0"), { fee: BASE_FEE, networkPassphrase: NETWORK.passphrase })
     .addOperation(contract.call("claim_payload", xdr.ScVal.scvBytes(giftKey), recipientScVal))
     .setTimeout(30)
     .build();
@@ -263,7 +256,7 @@ export async function claimGiftOnChain(opts: { recipient: string; secret: string
 
   const account = await server.getAccount(opts.recipient);
   const call = contract.call("claim", xdr.ScVal.scvBytes(giftKey), recipientScVal, xdr.ScVal.scvBytes(giftSignature));
-  const built = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: Networks.TESTNET })
+  const built = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: NETWORK.passphrase })
     .addOperation(call)
     .setTimeout(120)
     .build();
@@ -313,7 +306,7 @@ export const newGiftSecret = (): string => Keypair.random().secret();
 export async function fundPurseOnChain(opts: { sender: string; giftSecret: string; sign: SignTx }): Promise<void> {
   const h = horizon();
   const purse = Keypair.fromSecret(opts.giftSecret);
-  const tx = new TransactionBuilder(await h.loadAccount(opts.sender), { fee: BASE_FEE, networkPassphrase: Networks.TESTNET })
+  const tx = new TransactionBuilder(await h.loadAccount(opts.sender), { fee: BASE_FEE, networkPassphrase: NETWORK.passphrase })
     .addOperation(Operation.createAccount({ destination: purse.publicKey(), startingBalance: PURSE_FUNDING }))
     .addOperation(Operation.setOptions({ source: purse.publicKey(), signer: { ed25519PublicKey: opts.sender, weight: 1 } }))
     .setTimeout(120)
@@ -332,7 +325,7 @@ export async function activateWalletFromPurse(opts: { giftSecret: string; recipi
   const h = horizon();
   const purse = Keypair.fromSecret(opts.giftSecret);
   const account = await h.loadAccount(purse.publicKey());
-  const builder = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: Networks.TESTNET });
+  const builder = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: NETWORK.passphrase });
   // Remove the sender's recovery signer first: it costs the purse reserve it needs to create the wallet.
   for (const s of account.signers) {
     if (s.key !== purse.publicKey() && s.weight > 0) {
@@ -353,7 +346,7 @@ export async function recoverPurseOnChain(opts: { sender: string; giftKeyHex: st
   const h = horizon();
   const purseAddress = purseAddressFor(opts.giftKeyHex);
   if ((await getPurseBalance(opts.giftKeyHex)) === null) return false;
-  const tx = new TransactionBuilder(await h.loadAccount(opts.sender), { fee: BASE_FEE, networkPassphrase: Networks.TESTNET })
+  const tx = new TransactionBuilder(await h.loadAccount(opts.sender), { fee: BASE_FEE, networkPassphrase: NETWORK.passphrase })
     .addOperation(Operation.accountMerge({ source: purseAddress, destination: opts.sender }))
     .setTimeout(120)
     .build();
@@ -366,7 +359,7 @@ export async function takeBackGiftOnChain(opts: { sender: string; giftKeyHex: st
   const server = new rpc.Server(SOROBAN_RPC_URL);
   const account = await server.getAccount(opts.sender);
   const call = new Contract(GIFT_CONTRACT).call("refund", xdr.ScVal.scvBytes(asArg(fromHex(opts.giftKeyHex))));
-  const built = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: Networks.TESTNET })
+  const built = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: NETWORK.passphrase })
     .addOperation(call)
     .setTimeout(120)
     .build();

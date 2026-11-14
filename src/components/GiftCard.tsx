@@ -8,15 +8,22 @@ interface Props {
   theme: CardTheme;
   amount?: number;
   showValue?: boolean;
+  /** Play the pop-in and light sweep, for the moment a card is revealed. */
+  reveal?: boolean;
   className?: string;
 }
 
-export function GiftCard({ asset, theme, amount, showValue = false, className = "" }: Props) {
+export function GiftCard({ asset, theme, amount, showValue = false, reveal = false, className = "" }: Props) {
   const isAsset = theme.bg === "asset";
   const bg = isAsset ? `bg-gradient-to-br ${asset.gradient}` : theme.bg;
 
   return (
-    <div className={`relative aspect-[1.8/1] w-full overflow-hidden rounded-2xl ${bg} ${className}`}>
+    <div className={`relative aspect-[1.8/1] w-full overflow-hidden rounded-2xl ${bg} ${reveal ? "animate-reveal" : ""} ${className}`}>
+      {reveal && (
+        <div aria-hidden className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
+          <div className="animate-shine absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+        </div>
+      )}
       {/* decorative diagonal streaks */}
       <div className="pointer-events-none absolute inset-0 opacity-25">
         <div className="absolute -left-10 top-6 h-10 w-[140%] -rotate-[35deg] rounded-full bg-white/30" />
@@ -78,9 +85,10 @@ function BowSide() {
 }
 
 /** Wrapped state shown before the recipient (or sender) reveals the card */
-export function WrappedCard({ className = "" }: { className?: string }) {
+/** `opening` shakes it hard, just before it is unwrapped. Otherwise it wiggles now and then. */
+export function WrappedCard({ className = "", opening = false }: { className?: string; opening?: boolean }) {
   return (
-    <div className={`relative aspect-[1.8/1] w-full overflow-hidden rounded-2xl border border-neutral-200 bg-card ${className}`}>
+    <div className={`relative aspect-[1.8/1] w-full overflow-hidden rounded-2xl bg-card ${opening ? "animate-shake" : "animate-wiggle"} ${className}`}>
       {/* One picture for ribbon and bow, so they stay aligned at any size. */}
       <svg viewBox="0 0 360 200" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full" aria-hidden>
         {/* ribbon cross */}

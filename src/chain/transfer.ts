@@ -1,5 +1,6 @@
-import { Asset, BASE_FEE, Horizon, Networks, Operation, StrKey, TransactionBuilder } from "@stellar/stellar-sdk";
+import { Asset, BASE_FEE, Horizon, Operation, StrKey, TransactionBuilder } from "@stellar/stellar-sdk";
 import { HORIZON_URL, TOKEN_ISSUERS, type SignTx } from "./gift";
+import { NETWORK } from "../config/network";
 
 /**
  * Sends a token from the user's wallet to any Stellar address (withdraw).
@@ -72,8 +73,8 @@ export async function sendPaymentOnChain(opts: {
     ? Operation.payment({ destination, asset, amount })
     : Operation.createAccount({ destination, startingBalance: amount });
 
-  const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: Networks.TESTNET }).addOperation(op).setTimeout(120).build();
-  const signed = TransactionBuilder.fromXDR(await opts.sign(tx.toXDR()), Networks.TESTNET);
+  const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: NETWORK.passphrase }).addOperation(op).setTimeout(120).build();
+  const signed = TransactionBuilder.fromXDR(await opts.sign(tx.toXDR()), NETWORK.passphrase);
 
   try {
     const res = await server.submitTransaction(signed);

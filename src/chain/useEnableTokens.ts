@@ -1,7 +1,8 @@
 import { useCallback, useState } from "react";
-import { Asset, BASE_FEE, Horizon, Networks, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
+import { Asset, BASE_FEE, Horizon, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
 import { useAuth } from "../auth/AuthProvider";
 import { HORIZON_URL, useBalances } from "./Balances";
+import { NETWORK } from "../config/network";
 import { friendlyError } from "./gift";
 import { useWalletSigner } from "./walletSigner";
 
@@ -10,12 +11,9 @@ import { useWalletSigner } from "./walletSigner";
  * On Stellar an account can't hold a token until it opts in, and the opt-in
  * has to be signed by the account itself, so the wallet signs it.
  *
- * Testnet issuers (Circle). Must match lumecard/deployments/testnet.json.
+ * Issuers come from config/network.ts.
  */
-const TRUSTLINE_ASSETS = [
-  new Asset("USDC", "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5"),
-  new Asset("EURC", "GB3Q6QDZYTHWT7E5PVS3W7FUT5GVAFC5KSZFFLPU25GO7VTC3NM2ZTVO"),
-];
+const TRUSTLINE_ASSETS = [new Asset("USDC", NETWORK.tokenIssuers.usdc), new Asset("EURC", NETWORK.tokenIssuers.eurc)];
 
 export function useEnableTokens() {
   const { stellarAddress } = useAuth();
@@ -41,11 +39,11 @@ export function useEnableTokens() {
         const server = new Horizon.Server(HORIZON_URL);
         const account = await server.loadAccount(stellarAddress);
 
-        const builder = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: Networks.TESTNET });
+        const builder = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: NETWORK.passphrase });
         for (const asset of targets) builder.addOperation(Operation.changeTrust({ asset }));
         const tx = builder.setTimeout(120).build();
 
-        const signed = TransactionBuilder.fromXDR(await sign(tx.toXDR()), Networks.TESTNET);
+        const signed = TransactionBuilder.fromXDR(await sign(tx.toXDR()), NETWORK.passphrase);
         await server.submitTransaction(signed);
         refresh();
       } catch (e) {
