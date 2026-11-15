@@ -11,6 +11,10 @@ interface ImportMetaEnv {
   readonly VITE_USDC_ISSUER?: string;
   readonly VITE_EURC_ISSUER?: string;
   readonly VITE_FEE_ADDRESS?: string;
+  readonly VITE_DEPOSIT_FACTORY?: string;
+  readonly VITE_DEPOSIT_CHAIN?: string;
+  readonly VITE_DEPOSIT_RPC_URL?: string;
+  readonly VITE_DEPOSIT_RELAYER_URL?: string;
   readonly VITE_WALLETCONNECT_PROJECT_ID?: string;
 }
 

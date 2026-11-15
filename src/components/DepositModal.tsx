@@ -1,6 +1,7 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 import { AlertTriangle, ArrowLeft, Building2, Check, Copy, Wallet, X } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
+import { QrCode } from "../transfer";
 
 const short = (addr: string) => `${addr.slice(0, 4)}…${addr.slice(-4)}`;
 
@@ -16,40 +17,6 @@ export function DepositProvider({ children }: { children: ReactNode }) {
       {children}
       {open && <DepositModal onClose={() => setOpen(false)} />}
     </DepositContext.Provider>
-  );
-}
-
-/** Placeholder QR-style graphic (not a scannable code). Replace with a real QR library later. */
-function FakeQR({ seed, size = 184 }: { seed: string; size?: number }) {
-  const n = 25;
-  const cells = useMemo(() => {
-    let h = 0;
-    for (const c of seed) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-    const rand = () => ((h = (h * 1664525 + 1013904223) >>> 0) / 2 ** 32);
-    const out: [number, number][] = [];
-    const inFinder = (x: number, y: number) =>
-      (x < 8 && y < 8) || (x >= n - 8 && y < 8) || (x < 8 && y >= n - 8);
-    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (!inFinder(x, y) && rand() > 0.52) out.push([x, y]);
-    return out;
-  }, [seed]);
-
-  const finder = (x: number, y: number) => (
-    <g key={`${x}-${y}`}>
-      <rect x={x} y={y} width={7} height={7} fill="#111113" />
-      <rect x={x + 1} y={y + 1} width={5} height={5} fill="#fff" />
-      <rect x={x + 2} y={y + 2} width={3} height={3} fill="#111113" />
-    </g>
-  );
-
-  return (
-    <svg viewBox={`-1 -1 ${n + 2} ${n + 2}`} width={size} height={size} shapeRendering="crispEdges" className="rounded-xl bg-white">
-      {cells.map(([x, y]) => (
-        <rect key={`${x}.${y}`} x={x} y={y} width={1} height={1} fill="#111113" />
-      ))}
-      {finder(0, 0)}
-      {finder(n - 7, 0)}
-      {finder(0, n - 7)}
-    </svg>
   );
 }
 
@@ -98,7 +65,7 @@ function DepositModal({ onClose }: { onClose: () => void }) {
             <p className="mt-1 text-sm text-neutral-500">Send XLM, USDC or EURC on the Stellar network to your wallet address.</p>
 
             <div className="mx-auto mt-5 w-fit rounded-2xl border border-neutral-200 p-3">
-              <FakeQR seed={address} />
+              <QrCode value={address} />
             </div>
 
             <p className="mt-4 text-sm text-neutral-500">Your wallet address</p>

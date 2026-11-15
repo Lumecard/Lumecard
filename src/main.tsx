@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
 import { CONFIG_ERRORS } from "./config/network";
+import "./transfer/config"; // checks the cross-chain deposit settings along with the others
 
 function ConfigProblem() {
   return (

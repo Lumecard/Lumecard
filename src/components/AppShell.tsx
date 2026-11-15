@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
-import { ArrowDownToLine, BookOpen, Gift, Home, Info, Layers, Send, type LucideIcon } from "lucide-react";
+import { ArrowDownToLine, ArrowLeftRight, BookOpen, Gift, Home, Info, Layers, Send, type LucideIcon } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Header } from "./Header";
 import { useDeposit } from "./DepositModal";
 import { useWithdraw } from "./WithdrawModal";
 import { useConnectWallet } from "./ConnectWallet";
 import { useAuth } from "../auth/AuthProvider";
+import { CHAIN_DEPOSIT } from "../transfer";
 
 interface Item {
   label: string;
@@ -20,6 +21,8 @@ const MAIN: Item[] = [
   { label: "Home", icon: Home, to: "/", end: true },
   { label: "Mix", icon: Layers, to: "/mix" },
   { label: "Send gift", icon: Gift, to: "/app/gifts/create" },
+  // Bring USDC in from another chain. Only shown when it is set up.
+  ...(CHAIN_DEPOSIT.enabled ? [{ label: "Transfer", icon: ArrowLeftRight, to: "/transfer" }] : []),
 ];
 const WALLET: Item[] = [
   { label: "Deposit", icon: ArrowDownToLine, action: "deposit" },
@@ -105,7 +108,7 @@ function BottomNav() {
   const run = useItemAction();
   const items = [...MAIN, MORE[0]];
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-white/[0.06] bg-[#0e0d12]/95 backdrop-blur-md md:hidden">
+    <nav className={`fixed inset-x-0 bottom-0 z-30 grid ${items.length > 4 ? "grid-cols-5" : "grid-cols-4"} border-t border-white/[0.06] bg-[#0e0d12]/95 backdrop-blur-md md:hidden`}>
       {items.map((i) => {
         const Icon = i.icon;
         const inner = (
