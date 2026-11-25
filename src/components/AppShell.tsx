@@ -1,12 +1,11 @@
 import type { ReactNode } from "react";
-import { ArrowDownToLine, ArrowLeftRight, BookOpen, Gift, Home, Info, Layers, Send, type LucideIcon } from "lucide-react";
+import { ArrowDownToLine, BookOpen, Gift, Home, Info, Layers, Send, type LucideIcon } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Header } from "./Header";
 import { useDeposit } from "./DepositModal";
 import { useWithdraw } from "./WithdrawModal";
 import { useConnectWallet } from "./ConnectWallet";
 import { useAuth } from "../auth/AuthProvider";
-import { CHAIN_DEPOSIT } from "../transfer";
 
 interface Item {
   label: string;
@@ -21,8 +20,6 @@ const MAIN: Item[] = [
   { label: "Home", icon: Home, to: "/", end: true },
   { label: "Mix", icon: Layers, to: "/mix" },
   { label: "Send gift", icon: Gift, to: "/app/gifts/create" },
-  // Bring USDC in from another chain. Only shown when it is set up.
-  ...(CHAIN_DEPOSIT.enabled ? [{ label: "Transfer", icon: ArrowLeftRight, to: "/transfer" }] : []),
 ];
 const WALLET: Item[] = [
   { label: "Deposit", icon: ArrowDownToLine, action: "deposit" },

@@ -68,3 +68,29 @@ export async function registerWithRelayer(stellarAddress: string, expectedAddres
     return false;
   }
 }
+
+export interface DepositTransfer {
+  /** The transaction on the other chain that sent the USDC across. */
+  burnTx: string;
+  /** USDC sent across, after the small sweep reward. */
+  amount: number | null;
+  /** When it was sent, in milliseconds. */
+  at: number | null;
+  /** in_progress: Circle is approving. delivered: arrived. blocked: the wallet has not enabled USDC yet. */
+  stage: "in_progress" | "delivered" | "blocked";
+  /** The Stellar transaction that delivered it, when known. */
+  stellarTx: string | null;
+}
+
+/** Recent transfers for a wallet, newest first, from the relayer. Empty when there is no relayer or it is down. */
+export async function getTransfers(stellarAddress: string): Promise<DepositTransfer[] | undefined> {
+  if (!CHAIN_DEPOSIT.relayerUrl) return undefined;
+  try {
+    const res = await fetch(`${CHAIN_DEPOSIT.relayerUrl}/status?stellar=${encodeURIComponent(stellarAddress)}`);
+    if (!res.ok) return undefined;
+    const j = (await res.json()) as { transfers?: DepositTransfer[] };
+    return Array.isArray(j.transfers) ? j.transfers : undefined;
+  } catch {
+    return undefined;
+  }
+}

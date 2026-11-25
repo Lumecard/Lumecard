@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { getDepositAddress, getUsdcAtAddress, registerWithRelayer } from "./depositAddress";
+import { getDepositAddress, getUsdcAtAddress, registerWithRelayer, getTransfers, type DepositTransfer } from "./depositAddress";
 import { CHAIN_DEPOSIT } from "./config";
 
 /**
@@ -13,6 +13,7 @@ export function useChainDeposit(stellarAddress: string | undefined) {
   const [loading, setLoading] = useState(true);
   // undefined: not asked yet or no relayer set. true: the relayer is watching this wallet. false: it did not answer.
   const [watching, setWatching] = useState<boolean>();
+  const [transfers, setTransfers] = useState<DepositTransfer[]>([]);
 
   // Work out the deposit address once.
   useEffect(() => {
@@ -42,6 +43,19 @@ export function useChainDeposit(stellarAddress: string | undefined) {
     };
   }, [address, stellarAddress]);
 
+  // Where each transfer stands (waiting for Circle, arrived, or stuck), asked every 10 seconds.
+  useEffect(() => {
+    if (!stellarAddress || !CHAIN_DEPOSIT.relayerUrl) return;
+    let live = true;
+    const ask = () => getTransfers(stellarAddress).then((t) => live && t && setTransfers(t));
+    ask();
+    const t = setInterval(ask, 10_000);
+    return () => {
+      live = false;
+      clearInterval(t);
+    };
+  }, [stellarAddress]);
+
   const check = useCallback(async () => {
     if (!address) return;
     try {
@@ -58,5 +72,5 @@ export function useChainDeposit(stellarAddress: string | undefined) {
     return () => clearInterval(t);
   }, [address, check]);
 
-  return { address, waiting, error, loading, watching };
+  return { address, waiting, error, loading, watching, transfers };
 }

@@ -21,6 +21,8 @@ interface DepositChain {
   rpc: string;
   /** Circle's USDC on that chain. */
   usdc: string;
+  /** Block explorer address for a transaction, to be followed by the hash. */
+  explorerTx: string;
   /** Which Stellar network this chain pairs with. A test chain is never paired with the live Stellar network. */
   testnet: boolean;
 }
@@ -32,6 +34,7 @@ const CHAINS: Record<DepositChainId, DepositChain> = {
     chainId: 84532,
     rpc: "https://sepolia.base.org",
     usdc: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+    explorerTx: "https://sepolia.basescan.org/tx/",
     testnet: true,
   },
   base: {
@@ -40,6 +43,7 @@ const CHAINS: Record<DepositChainId, DepositChain> = {
     chainId: 8453,
     rpc: "https://mainnet.base.org",
     usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    explorerTx: "https://basescan.org/tx/",
     testnet: false,
   },
 };
@@ -90,6 +94,8 @@ export const CHAIN_DEPOSIT = {
   /** Empty when no relayer server is set. */
   relayerUrl,
   usdc: chain.usdc,
+  /** Link to a transaction on the other chain's explorer. */
+  explorerTx: (hash: string) => chain.explorerTx + encodeURIComponent(hash),
   /** The contract ignores anything smaller, so the screen says so. Matches the contract (3 USDC). */
   minUsdc: 3,
   /** Typical wait for Circle to approve a standard transfer, shown to the person depositing. */

@@ -14,7 +14,6 @@ import { ConnectWalletProvider } from "./components/ConnectWallet";
 import { AuthProvider } from "./auth/AuthProvider";
 import Mixes from "./pages/Mixes";
 import MixDetail from "./pages/MixDetail";
-import Transfer from "./pages/Transfer";
 import { RequireAuth } from "./auth/RequireAuth";
 import { BalanceProvider } from "./chain/Balances";
 
@@ -31,7 +30,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <Route path="/" element={<Dashboard />} />
               <Route path="/welcome" element={<Landing />} />
               <Route path="/mix" element={<Mixes />} />
-              <Route path="/transfer" element={<Transfer />} />
               <Route path="/mix/:id" element={<MixDetail />} />
               <Route path="/guide" element={<Guide />} />
               <Route path="/app" element={<Navigate to="/" replace />} />

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowDown, ArrowLeft, Check, ChevronDown, Copy, Info } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { AssetIcon } from "../components/AssetIcon";
@@ -6,6 +6,8 @@ import { getAsset } from "../data/assets";
 import { CHAIN_DEPOSIT } from "./config";
 import { QrCode } from "./QrCode";
 import { useChainDeposit } from "./useChainDeposit";
+import { useBalances } from "../chain/Balances";
+import { TransferRow } from "./TransferTracker";
 
 /** One numbered step: a circle on the left joined to the next one by a line. */
 function Step({ marker, title, last = false, children }: { marker: ReactNode; title: string; last?: boolean; children: ReactNode }) {
@@ -66,12 +68,39 @@ const Row = ({ label, value }: { label: string; value: string }) => (
 /** "USDC from another chain": network, token, then the address to send to. Shown on the Transfer page. */
 export function ChainDeposit({ onBack }: { onBack?: () => void }) {
   const { stellarAddress } = useAuth();
-  const { address, waiting, error, loading, watching } = useChainDeposit(stellarAddress);
+  const { address, waiting, error, loading, watching, transfers } = useChainDeposit(stellarAddress);
+  const { refresh } = useBalances();
+  const [arrived, setArrived] = useState<string>();
+  const seen = useRef<Record<string, string>>({});
   const [copied, setCopied] = useState(false);
   const usdc = getAsset("usdc")!;
 
+  // When a transfer we were watching arrives, say so and refresh the balances.
+  useEffect(() => {
+    for (const t of transfers) {
+      if (seen.current[t.burnTx] === "in_progress" && t.stage === "delivered") {
+        setArrived(t.amount !== null ? `${t.amount} USDC arrived in your Stellar wallet.` : "Your USDC arrived in your Stellar wallet.");
+        refresh();
+      }
+      seen.current[t.burnTx] = t.stage;
+    }
+  }, [transfers, refresh]);
+  // USDC at the address that has not been sent across yet (the relayer picks it up within a minute).
+  const pendingSweep = waiting >= CHAIN_DEPOSIT.minUsdc;
+
   return (
     <div>
+      {arrived && (
+        <div className="mb-6 flex items-center justify-between gap-3 rounded-2xl bg-brand-600/15 px-4 py-3 text-sm">
+          <span className="flex items-center gap-2 font-semibold">
+            <Check className="h-4 w-4 text-brand-500" /> {arrived}
+          </span>
+          <button onClick={() => setArrived(undefined)} className="text-xs text-neutral-500">
+            Dismiss
+          </button>
+        </div>
+      )}
+
       <Step marker={<Done />} title="Select Network">
         <NetworkPicker />
       </Step>
@@ -127,21 +156,6 @@ export function ChainDeposit({ onBack }: { onBack?: () => void }) {
                 <p className="mt-3 text-xs text-brand-500">Automatic delivery is not responding right now. Your USDC stays safe at this address and is delivered once it is back.</p>
               )}
 
-              {waiting > 0 && (
-                <div className="mt-4 rounded-lg bg-surface px-3 py-2.5 text-sm">
-                  {waiting >= CHAIN_DEPOSIT.minUsdc ? (
-                    <>
-                      <span className="font-semibold">{waiting} USDC received on {CHAIN_DEPOSIT.name}.</span>
-                      <span className="text-neutral-500"> It is being sent to your Stellar wallet. This takes about {CHAIN_DEPOSIT.waitMinutes} minutes.</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="font-semibold">{waiting} USDC is waiting at the address.</span>
-                      <span className="text-neutral-500"> It is below the {CHAIN_DEPOSIT.minUsdc} USDC minimum, so send more to move it.</span>
-                    </>
-                  )}
-                </div>
-              )}
             </>
           )}
         </div>
@@ -162,6 +176,23 @@ export function ChainDeposit({ onBack }: { onBack?: () => void }) {
           <Row label="Est. processing time" value={`${CHAIN_DEPOSIT.waitMinutes} min`} />
         </div>
       </Step>
+
+      {(pendingSweep || transfers.length > 0 || (waiting > 0 && !pendingSweep)) && (
+        <div className="mt-8">
+          <h2 className="mb-3 text-lg font-semibold">Your transfers</h2>
+          <div className="space-y-3">
+            {waiting > 0 && !pendingSweep && (
+              <p className="rounded-2xl bg-card p-4 text-sm text-neutral-500">
+                <span className="font-semibold text-fg">{waiting} USDC is waiting at your address.</span> It is below the {CHAIN_DEPOSIT.minUsdc} USDC minimum, so send more to move it.
+              </p>
+            )}
+            {pendingSweep && <TransferRow transfer={null} waiting={waiting} />}
+            {transfers.map((t) => (
+              <TransferRow key={t.burnTx} transfer={t} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {onBack && (
         <button onClick={onBack} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-neutral-200 text-sm font-semibold">
