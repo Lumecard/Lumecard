@@ -5,6 +5,7 @@ import { Header } from "../components/Header";
 import { GiftCard, WrappedCard } from "../components/GiftCard";
 import { getAsset, type Asset } from "../data/assets";
 import { CARD_THEMES } from "../data/themes";
+import { preloadCard } from "../cards/preload";
 import { useConnectWallet } from "../components/ConnectWallet";
 import { useAuth } from "../auth/AuthProvider";
 import { useBalances } from "../chain/Balances";
@@ -238,6 +239,9 @@ export default function ClaimGift() {
 
   const asset = gift ? getAsset(gift.assetId) : undefined;
   const theme = gift ? CARD_THEMES.find((t) => t.id === gift.themeId) : undefined;
+
+  // Download the card while the wrapped gift is on screen, so "Open gift" reveals it with no wait.
+  useEffect(() => preloadCard(theme), [theme]);
 
   if (!gift || !asset || !theme || !secret || !giftKeyHex) {
     return (

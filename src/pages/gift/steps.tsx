@@ -219,7 +219,7 @@ export function Customize({
                 className={`h-14 w-14 shrink-0 overflow-hidden rounded-full ${t.id === draft.themeId ? "ring-2 ring-brand-600 ring-offset-2 ring-offset-transparent" : "opacity-50 hover:opacity-80"}`}
               >
                 {t.images ? (
-                  <img src={t.images.front} alt={t.label} draggable={false} style={{ objectPosition: "78% 40%" }} className="h-full w-full object-cover" />
+                  <img src={t.images.thumb} alt={t.label} loading="lazy" decoding="async" draggable={false} style={{ objectPosition: "78% 40%" }} className="h-full w-full object-cover" />
                 ) : t.bg === "asset" ? (
                   <span className={`grid h-full w-full place-items-center bg-gradient-to-br text-sm font-bold text-white ${asset.gradient}`}>{asset.glyph}</span>
                 ) : (

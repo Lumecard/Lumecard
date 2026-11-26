@@ -12,14 +12,17 @@ export interface PngTemplate {
   group: TemplateGroup;
   front: string;
   back: string;
+  /** Tiny version for the design picker, so it doesn't download every full card. */
+  thumb: string;
 }
 
 const png = (id: string, label: string, group: TemplateGroup): PngTemplate => ({
   id,
   label,
   group,
-  front: `/cards/${id}/front.png`,
-  back: `/cards/${id}/back.png`,
+  front: `/cards/${id}/front.webp`,
+  back: `/cards/${id}/back.webp`,
+  thumb: `/cards/${id}/thumb.webp`,
 });
 
 export const PNG_TEMPLATES: PngTemplate[] = [

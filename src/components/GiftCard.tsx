@@ -46,11 +46,11 @@ function ImageCard({ asset, theme, amount, showValue, reveal, className }: Props
       )}
       <div className="relative h-full w-full transition-transform duration-500" style={{ transformStyle: "preserve-3d", transform: flipped ? "rotateY(180deg)" : "none" }}>
         <div className={face} style={{ backfaceVisibility: "hidden" }}>
-          <img src={front} alt={`${theme.label} card, front`} draggable={false} className="h-full w-full object-cover" />
+          <img src={front} alt={`${theme.label} card, front`} decoding="async" fetchPriority="high" draggable={false} className="h-full w-full object-cover" />
           {showValue && amount !== undefined && <ValueStrip asset={asset} amount={amount} />}
         </div>
         <div className={face} style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
-          <img src={back} alt={`${theme.label} card, back`} draggable={false} className="h-full w-full object-cover" />
+          <img src={back} alt={`${theme.label} card, back`} loading="lazy" decoding="async" draggable={false} className="h-full w-full object-cover" />
         </div>
       </div>
       <button

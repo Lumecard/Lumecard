@@ -7,7 +7,7 @@ export interface CardTheme {
   bg: string;
   tagline?: string;
   /** PNG card: the two sides. The card can be flipped between them. */
-  images?: { front: string; back: string };
+  images?: { front: string; back: string; thumb: string };
 }
 
 const BUILT_IN: CardTheme[] = [
@@ -21,5 +21,5 @@ const BUILT_IN: CardTheme[] = [
 
 export const CARD_THEMES: CardTheme[] = [
   ...BUILT_IN,
-  ...PNG_TEMPLATES.map((t): CardTheme => ({ id: t.id, label: t.label, bg: "image", images: { front: t.front, back: t.back } })),
+  ...PNG_TEMPLATES.map((t): CardTheme => ({ id: t.id, label: t.label, bg: "image", images: { front: t.front, back: t.back, thumb: t.thumb } })),
 ];
