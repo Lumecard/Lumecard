@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUpDown, Check, ChevronLeft, ChevronRight, Copy, Link2, Mail, Search, Wallet } from "lucide-react";
 import { useDeposit } from "../../components/DepositModal";
 import { AssetIcon } from "../../components/AssetIcon";
@@ -8,6 +8,7 @@ import { CARD_THEMES } from "../../data/themes";
 import { useAuth } from "../../auth/AuthProvider";
 import { MAX_FROM, MAX_MESSAGE, buildGiftLink } from "../../lib/giftLink";
 import { saveLink } from "../../lib/savedLinks";
+import { sendGiftEmail } from "../../email";
 import { PURSE_XLM, XLM_BUFFER, feeFor, isGiftTooSmall, minGiftTokens, type CreatedGift } from "../../chain/gift";
 import { useCreateGift } from "../../chain/useCreateGift";
 import { fmtAmount, fmtUsd, useBalances } from "../../chain/Balances";
@@ -183,6 +184,13 @@ export function Customize({
   const idx = CARD_THEMES.findIndex((t) => t.id === draft.themeId);
   const cycle = (d: number) => update({ themeId: CARD_THEMES[(idx + d + CARD_THEMES.length) % CARD_THEMES.length].id });
 
+  // The row of designs scrolls sideways. Keep the chosen one in view, and let the arrows page through it.
+  const strip = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    strip.current?.querySelector<HTMLElement>("[data-selected='true']")?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+  }, [draft.themeId]);
+  const scrollStrip = (dir: -1 | 1) => strip.current?.scrollBy({ left: dir * strip.current.clientWidth * 0.7, behavior: "smooth" });
+
   return (
     <div>
       <div className="flex items-center gap-3">
@@ -195,21 +203,35 @@ export function Customize({
         </button>
       </div>
 
-      <div className="no-scrollbar mt-4 flex justify-center gap-2.5 overflow-x-auto py-1">
-        {CARD_THEMES.map((t) => (
-          <button
-            key={t.id}
-            title={t.label}
-            onClick={() => update({ themeId: t.id })}
-            className={`h-14 w-14 shrink-0 overflow-hidden rounded-full ${t.id === draft.themeId ? "" : "opacity-50"}`}
-          >
-            {t.bg === "asset" ? (
-              <span className={`grid h-full w-full place-items-center bg-gradient-to-br text-sm font-bold text-white ${asset.gradient}`}>{asset.glyph}</span>
-            ) : (
-              <span className={`grid h-full w-full place-items-center px-1 text-[8px] font-bold leading-tight text-white ${t.bg}`}>{t.tagline}</span>
-            )}
-          </button>
-        ))}
+      <div className="mt-4 flex items-center gap-1">
+        <button onClick={() => scrollStrip(-1)} className="shrink-0 rounded-full p-1 hover:bg-neutral-100" aria-label="Scroll designs left">
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        {/* mx-auto on the inner row centres it when it fits and lets it scroll from the left edge when it doesn't */}
+        <div ref={strip} className="no-scrollbar flex min-w-0 flex-1 overflow-x-auto py-1">
+          <div className="mx-auto flex w-max gap-2.5 px-1">
+            {CARD_THEMES.map((t) => (
+              <button
+                key={t.id}
+                title={t.label}
+                data-selected={t.id === draft.themeId}
+                onClick={() => update({ themeId: t.id })}
+                className={`h-14 w-14 shrink-0 overflow-hidden rounded-full ${t.id === draft.themeId ? "ring-2 ring-brand-600 ring-offset-2 ring-offset-transparent" : "opacity-50 hover:opacity-80"}`}
+              >
+                {t.images ? (
+                  <img src={t.images.front} alt={t.label} draggable={false} style={{ objectPosition: "78% 40%" }} className="h-full w-full object-cover" />
+                ) : t.bg === "asset" ? (
+                  <span className={`grid h-full w-full place-items-center bg-gradient-to-br text-sm font-bold text-white ${asset.gradient}`}>{asset.glyph}</span>
+                ) : (
+                  <span className={`grid h-full w-full place-items-center px-1 text-[8px] font-bold leading-tight text-white ${t.bg}`}>{t.tagline}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+        <button onClick={() => scrollStrip(1)} className="shrink-0 rounded-full p-1 hover:bg-neutral-100" aria-label="Scroll designs right">
+          <ChevronRight className="h-5 w-5" />
+        </button>
       </div>
 
       <div className="mt-4 space-y-3">
@@ -316,7 +338,7 @@ export function Preview({
         {(
           [
             { id: "link", icon: Link2, title: "Sharable Link", sub: "Send via link", soon: false },
-            { id: "email", icon: Mail, title: "Email", sub: "Coming soon", soon: true },
+            { id: "email", icon: Mail, title: "Email", sub: "Send to their inbox", soon: false },
           ] as const
         ).map(({ id, icon: Icon, title, sub, soon }) => (
           <button
@@ -541,6 +563,18 @@ export function Done({
     if (stellarAddress) saveLink(stellarAddress, gift.giftKeyHex, link);
   }, [stellarAddress, gift.giftKeyHex, link]);
 
+  // Email delivery: send the link once. The ref stops a second send if React re-runs the effect.
+  const [emailState, setEmailState] = useState<"idle" | "sending" | "sent" | "failed">("idle");
+  const emailStarted = useRef(false);
+  useEffect(() => {
+    if (draft.delivery !== "email" || emailStarted.current) return;
+    emailStarted.current = true;
+    setEmailState("sending");
+    sendGiftEmail({ to: draft.recipientEmail, claimUrl: link, senderName: draft.from, message: draft.message })
+      .then(() => setEmailState("sent"))
+      .catch(() => setEmailState("failed"));
+  }, [draft.delivery, draft.recipientEmail, draft.from, draft.message, link]);
+
   return (
     <div className="text-center">
       <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-brand-100 text-brand-600">
@@ -562,6 +596,14 @@ export function Done({
       <div className="mx-auto mt-6 max-w-sm">
         <GiftCard asset={asset} theme={theme} amount={draft.amount} showValue />
       </div>
+
+      {draft.delivery === "email" && emailState !== "idle" && (
+        <p className={`mt-4 text-sm ${emailState === "failed" ? "text-red-600" : "text-neutral-600"}`}>
+          {emailState === "sending" && `Sending the gift to ${draft.recipientEmail}…`}
+          {emailState === "sent" && `We emailed the gift to ${draft.recipientEmail}.`}
+          {emailState === "failed" && "We couldn't send the email. Copy the link below and send it yourself."}
+        </p>
+      )}
 
       <div className="mt-6 flex items-center gap-2 rounded-xl bg-surface p-2 pl-4">
         <span className="flex-1 truncate text-left text-sm">{link}</span>

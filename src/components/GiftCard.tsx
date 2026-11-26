@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { RotateCw } from "lucide-react";
 import type { Asset } from "../data/assets";
 import type { CardTheme } from "../data/themes";
 import { AssetIcon } from "./AssetIcon";
@@ -13,7 +15,52 @@ interface Props {
   className?: string;
 }
 
+/** The "Gift Card Value" bar along the bottom of a card. */
+function ValueStrip({ asset, amount }: { asset: Asset; amount: number }) {
+  return (
+    <div className="absolute inset-x-3 bottom-3 flex items-center justify-between rounded-lg bg-neutral-100/95 px-3 py-2 backdrop-blur">
+      <div>
+        <p className="text-[10px] text-neutral-500">Gift Card Value</p>
+        <p className="text-sm font-bold">
+          ${amount} of {asset.symbol}
+        </p>
+      </div>
+      <AssetIcon asset={asset} size="md" />
+    </div>
+  );
+}
+
+/** A PNG card: a picture for the front and one for the back, with a button to flip between them. */
+function ImageCard({ asset, theme, amount, showValue, reveal, className }: Props & { showValue: boolean; reveal: boolean; className: string }) {
+  const [flipped, setFlipped] = useState(false);
+  const { front, back } = theme.images!;
+  const face = "absolute inset-0 overflow-hidden rounded-2xl";
+
+  return (
+    <div className={`relative aspect-[1.8/1] w-full ${reveal ? "animate-reveal" : ""} ${className}`} style={{ perspective: "1200px" }}>
+      <div className="relative h-full w-full transition-transform duration-500" style={{ transformStyle: "preserve-3d", transform: flipped ? "rotateY(180deg)" : "none" }}>
+        <div className={face} style={{ backfaceVisibility: "hidden" }}>
+          <img src={front} alt={`${theme.label} card, front`} draggable={false} className="h-full w-full object-cover" />
+          {showValue && amount !== undefined && <ValueStrip asset={asset} amount={amount} />}
+        </div>
+        <div className={face} style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
+          <img src={back} alt={`${theme.label} card, back`} draggable={false} className="h-full w-full object-cover" />
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={() => setFlipped((f) => !f)}
+        className="absolute right-3 top-3 z-20 flex items-center gap-1.5 rounded-full bg-black/55 px-2.5 py-1.5 text-[11px] font-semibold text-white backdrop-blur hover:bg-black/70"
+      >
+        <RotateCw className="h-3.5 w-3.5" />
+        {flipped ? "Show front" : "Show back"}
+      </button>
+    </div>
+  );
+}
+
 export function GiftCard({ asset, theme, amount, showValue = false, reveal = false, className = "" }: Props) {
+  if (theme.images) return <ImageCard asset={asset} theme={theme} amount={amount} showValue={showValue} reveal={reveal} className={className} />;
   const isAsset = theme.bg === "asset";
   const bg = isAsset ? `bg-gradient-to-br ${asset.gradient}` : theme.bg;
 
@@ -49,17 +96,7 @@ export function GiftCard({ asset, theme, amount, showValue = false, reveal = fal
         )}
       </div>
 
-      {showValue && amount !== undefined && (
-        <div className="absolute inset-x-3 bottom-3 flex items-center justify-between rounded-lg bg-neutral-100/95 px-3 py-2 backdrop-blur">
-          <div>
-            <p className="text-[10px] text-neutral-500">Gift Card Value</p>
-            <p className="text-sm font-bold">
-              ${amount} of {asset.symbol}
-            </p>
-          </div>
-          <AssetIcon asset={asset} size="md" />
-        </div>
-      )}
+      {showValue && amount !== undefined && <ValueStrip asset={asset} amount={amount} />}
     </div>
   );
 }
