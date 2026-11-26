@@ -38,6 +38,12 @@ function ImageCard({ asset, theme, amount, showValue, reveal, className }: Props
 
   return (
     <div className={`relative aspect-[1.8/1] w-full ${reveal ? "animate-reveal" : ""} ${className}`} style={{ perspective: "1200px" }}>
+      {/* The light sweep played when a card is revealed, same as on the gradient cards. */}
+      {reveal && (
+        <div aria-hidden className="pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-2xl">
+          <div className="animate-shine absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+        </div>
+      )}
       <div className="relative h-full w-full transition-transform duration-500" style={{ transformStyle: "preserve-3d", transform: flipped ? "rotateY(180deg)" : "none" }}>
         <div className={face} style={{ backfaceVisibility: "hidden" }}>
           <img src={front} alt={`${theme.label} card, front`} draggable={false} className="h-full w-full object-cover" />
